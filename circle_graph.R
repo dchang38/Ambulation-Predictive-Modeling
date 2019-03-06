@@ -12,5 +12,7 @@ ggplot(hd, aes(x=hours_of_stay, y=ï..patient_ID, size=distance^(1/.7))) +
   geom_point(alpha=0.2) +
   scale_size_continuous(range = c(0.5, 10)) +
   geom_point(data=discharge_dates, aes(x=discharge, y=patient_id), inherit.aes = FALSE, color='red') +
-  scale_x_continuous(breaks=seq(0,max_hour,24))
-
+  scale_x_continuous(breaks=seq(0,max_hour,24)) +
+  ggtitle("Patient Ambulation Distance by Time") +
+  xlab("Hour of Stay") + 
+  ylab("Patient ID")
