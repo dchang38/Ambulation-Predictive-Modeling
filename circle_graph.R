@@ -6,7 +6,6 @@ pi <- read.csv("data_files/patient_info.csv",
                header =TRUE)
 max_hour <- max(hd$hours_of_stay, na.rm=TRUE)
 max_day <- max(hd$Day.on.Unit, na.rm=TRUE)
-hd$hms <- format(hd$time_of_day, format = "%H:%M:%S")
 ggplot(hd, aes(x=hours_of_stay, y=ï..patient_ID, size=distance)) +
   geom_point(alpha=0.2) +
   scale_size_continuous(range = c(0.5, 10)) +
