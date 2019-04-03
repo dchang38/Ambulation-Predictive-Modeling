@@ -56,3 +56,22 @@ geom_point(data=hd, aes(x=hours_of_stay, y=patient_ID, size=distance^(1/.7)), in
   xlab("Hour of Stay") + 
   ylab("Patient ID")
 ```
+```{r}
+library(randomForest) # basic implementation
+
+ambData <- read.csv("data_files/historical_details.csv",
+               fileEncoding="UTF-8-BOM",
+               header = TRUE)
+set.seed(100)
+trainRowCount <- floor(0.8 * nrow(ambData))
+trainIndex <- sample(1:nrow(ambData), trainRowCount)
+train <- ambData[trainIndex,]
+test <- ambData[-trainIndex,]
+summary(train)
+predictorColumns <- c("ambulation", "hour_of_day", "Day.on.Unit", "distance", "duration", "speed", "hours_of_stay")
+rf <- randomForest(train[predictorColumns], train$max_hour, ntree=100)
+predictions <- predict(rf, test[predictorColumns])
+predictions
+#model <- randomForest(max_hour ~ ., data = TrainSet, ntree = 1000, mtry = 20, importance = TRUE)
+#model
+```
