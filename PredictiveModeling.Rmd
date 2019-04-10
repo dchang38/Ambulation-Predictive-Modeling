@@ -1,0 +1,277 @@
+---
+title: "Predictive Modeling"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+## Predicitve Modeling
+
+#### FROM HISTORICAL
+historical <- read.csv("data_files/historical_details_withdayonunit.csv",
+                        header =TRUE)
+
+distance = historical$distance
+duration = historical$duration
+speed = historical$speed
+
+#### FROM FINAL COHORTS
+finalPatients <- read.csv("data_files/Final_patients.csv",
+                          header = FALSE, skip = 3)
+
+finalPatients <- head(finalPatients,-3)
+
+readmission = finalPatients$V4
+location = finalPatients$V5
+icu = finalPatients$V6
+
+#### FROM PATIENT INFO 
+## load data from local csv file
+patientInfo <- read.csv("data_files/patient_info.csv",
+               header =TRUE, skip = 0)
+
+patientInfo <- head(patientInfo,-3)
+
+admissionDays = patientInfo$admission_date
+dischargeDays = patientInfo$discharge_date
+transferDays = patientInfo$transfer_date
+firstAdmission = patientInfo$admission_date[1]
+
+patientInfo$a2d <- (as.Date(transferDays, format="%m/%d/%Y") - as.Date(admissionDays, format="%m/%d/%Y"))
+patientInfo$t2d <- (as.Date(dischargeDays, format="%m/%d/%Y") - as.Date(transferDays, format="%m/%d/%Y"))
+
+patientInfo$before <- (as.Date(admissionDays, format="%m/%d/%Y") - as.Date(firstAdmission, format="%m/%d/%Y"))
+
+for (i in 1:87){
+  patID = patientInfo$patient_ID[i]
+  icunew = finalPatients$V6[patID]
+  patientInfo$icuDay[i] <- icunew/24
+}
+
+for (i in 1:86){
+  if (patientInfo$a2d[i]>patientInfo$icuDay[i]){
+    patientInfo$a2i[i] <- patientInfo$a2d[i] - patientInfo$icuDay[i]
+    
+  } else {
+    patientInfo$a2i[i] <- 0
+  
+  }
+    
+}
+
+patientInfo$total <- patientInfo$a2i + patientInfo$icuDay + patientInfo$t2d
+
+patientInfo$dischargeWeekday <- weekdays(as.Date(dischargeDays, '%m/%d/%Y'))
+patientInfo$transferWeekday <- weekdays(as.Date(transferDays, '%m/%d/%Y'))
+
+for (i in 1:106){
+  patientInfo$stringPatient_ID[i] <- toString(patientInfo$patient_ID[i])
+}
+
+transferWeekdays = patientInfo$transferWeekday
+weekdays = patientInfo$dischargeWeekday
+lengthOfStay = patientInfo$length_of_stay.days.
+transferCounts = rep(0, 7)
+counts = rep(0, 7)
+
+my.array <- array(counts, dim=c(1,7))
+
+for (i in 1:length(weekdays)){
+  
+  if (identical(weekdays[i], "Monday")){
+    
+    counts[1] = counts[1] + 1
+    
+  } else if (identical(weekdays[i], "Tuesday")){
+    
+    counts[2] = counts[2] + 1
+    
+  } else if (identical(weekdays[i], "Wednesday")){
+    
+    counts[3] = counts[3] + 1
+    
+  } else if (identical(weekdays[i], "Thursday")){
+    
+    counts[4] = counts[4] + 1
+    
+  } else if (identical(weekdays[i], "Friday")){
+    
+    counts[5] = counts[5] + 1
+    
+  } else if (identical(weekdays[i], "Saturday")){
+    
+    counts[6] = counts[6] + 1
+    
+  } else if (identical(weekdays[i], "Sunday")){
+    
+    counts[7] = counts[7] + 1
+    
+  } else {
+    
+  }
+  
+} 
+
+for (i in 1:length(transferWeekdays)){
+  
+  if (identical(transferWeekdays[i], "Monday")){
+    
+    transferCounts[1] = transferCounts[1] + 1
+    
+  } else if (identical(transferWeekdays[i], "Tuesday")){
+    
+    transferCounts[2] = transferCounts[2] + 1
+    
+  } else if (identical(transferWeekdays[i], "Wednesday")){
+    
+    transferCounts[3] = transferCounts[3] + 1
+    
+  } else if (identical(transferWeekdays[i], "Thursday")){
+    
+    transferCounts[4] = transferCounts[4] + 1
+    
+  } else if (identical(transferWeekdays[i], "Friday")){
+    
+    transferCounts[5] = transferCounts[5] + 1
+    
+  } else if (identical(transferWeekdays[i], "Saturday")){
+    
+    transferCounts[6] = transferCounts[6] + 1
+    
+  } else if (identical(transferWeekdays[i], "Sunday")){
+    
+    transferCounts[7] = transferCounts[7] + 1
+    
+  } else {
+    
+  }
+  
+} 
+df2 <- data.frame(dis=rep(c("Discharge", "Transfer"), each=7),
+                day= rep(c("Monday", "Tuesday","Wednesday","Thursday","Friday", "Saturday","Sunday")), 2,
+                count=c(counts, transferCounts))
+df2$day <- factor(df2$day, levels=c("Monday", "Tuesday","Wednesday","Thursday","Friday", "Saturday","Sunday"))
+head(df2)
+
+df3 <- data.frame(los=lengthOfStay)
+head(df3)
+
+readmission <- head(readmission,-3)
+df4 <- data.frame(read=readmission)
+head(df4)
+
+location <- head(location,-1)
+df5 <- data.frame(loc=location)
+head(df5)
+
+df6 <- data.frame(spe=speed)
+head(df6)
+
+df7 <- data.frame(dis=distance)
+head(df7)
+
+df8 <- data.frame(dur=duration)
+head(df8)
+
+df9 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  a2i= c(patientInfo$a2i),
+                  icuDay=c(patientInfo$icuDay),
+                  t2d = c(patientInfo$t2d), 
+                  total = c(patientInfo$total))
+
+head(df9)
+
+df9 <- head(df9,-20)
+attach(df9)
+df9 <- df9[order(total) , ] 
+df9$total <- NULL
+
+
+library(reshape2)
+DF9 <- melt(df9)
+DF9$id <- rep(1:86, times = 3)
+DF9$variable <- factor(DF9$variable, levels=c("t2d", "icuDay","a2i"))
+
+df10 <- data.frame(id=c(patientInfo$patient_ID),
+                  a2i= c(patientInfo$a2i),
+                  icuDay=c(patientInfo$icuDay),
+                  t2d = c(patientInfo$t2d), 
+                  before = c(patientInfo$before))
+
+head(df10)
+
+df10 <- head(df10,-20)
+attach(df10)
+
+library(reshape2)
+DF10 <- melt(df10, id.vars = c("id"))
+DF10$variable <- factor(DF10$variable, levels=c("t2d", "icuDay","a2i", "before"))
+```
+
+## Discharge/Transfer Day of Week 
+
+```{r , echo=FALSE}
+library(ggplot2)
+ggplot(data=df2, aes(x=day, y=count, fill=dis)) +
+geom_bar(stat="identity", position=position_dodge())
+```
+
+## Length of Stay
+
+```{r , echo=FALSE}
+ggplot(df3, aes(x=los)) + 
+  geom_histogram(color="black", fill="white", binwidth=1) 
+```
+
+## Readmission Rates
+
+```{r , echo=FALSE}
+ggplot(df4, aes(x=read))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + scale_x_continuous(breaks=c(0,1), labels=c("NO", "YES"))
+```
+
+## Discharge Location
+
+```{r , echo=FALSE}
+ggplot(df5, aes(x=loc))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + scale_x_continuous(breaks=c(0,1), labels=c("Home or Hotel", "Rehab"))
+```
+
+## Raw Speed Data
+
+```{r , echo=FALSE}
+ggplot(df6, aes(x=spe))  +
+  geom_histogram(color="black", fill="white", binwidth=0.1) + labs(x = "Speed (m/s)")
+```
+
+## Log Distance Data
+
+```{r , echo=FALSE}
+ggplot(log10(df7), aes(x=dis))  +
+  geom_histogram(color="black", fill="white", binwidth=0.1) +
+scale_x_continuous(breaks=c(2,2.5,2.7,3,3.5,4), labels=c("100","316",  "447","1000","3160", "10000")) + labs(x = "Distance (meters)") + geom_vline(xintercept = 2.7, linetype="dotted", 
+                color = "blue", size=1.5)
+```
+
+## Raw Duration Data
+
+```{r , echo=FALSE}
+ggplot(df8/60, aes(x=dur))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + labs(x = "Duration (minutes)")
+```
+
+## Stacked Time per Patient ID 
+
+```{r , echo=FALSE}
+#DF9[, 3] <- log(24*DF9[3])
+ggplot(DF9, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + labs(y = "Time (Day)") + labs(x = "Patient") + scale_x_continuous(breaks=c(0), labels=c(""))
+```
+
+## Absolute Calendar Time 
+
+```{r , echo=FALSE}
+ggplot(DF10, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + scale_y_continuous(breaks=c(0, 586), labels=c("08/22/16", "01/27/19")) + labs(y = "Day") + coord_flip() + scale_fill_manual(values = c("Green","Yellow", "Red", "#e8e8e8"))
+```

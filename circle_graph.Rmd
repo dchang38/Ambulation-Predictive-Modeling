@@ -2,19 +2,76 @@
 library(tidyverse)
 
 hd <- read.csv("data_files/historical_details.csv",
+               fileEncoding="UTF-8-BOM",
+               header =TRUE)
+hd2 <- read.csv("data_files/historical_details_400-500.csv",
+               fileEncoding="UTF-8-BOM",
                header =TRUE)
 pi <- read.csv("data_files/patient_info.csv",
+               fileEncoding="UTF-8-BOM",
                header =TRUE)
 max_hour <- max(hd$hours_of_stay, na.rm=TRUE)
 max_day <- max(hd$Day.on.Unit, na.rm=TRUE)
 discharge_hours <- (pi$length_of_stay.days. * 24)
 discharge_dates <- data.frame(patient_id = pi$patient_ID, discharge = discharge_hours)
-ggplot(hd, aes(x=hours_of_stay, y=ï..patient_ID, size=distance^(1/.7))) +
-  geom_point(alpha=0.2) +
+#discharge_dates$discharge=as.numeric(levels(discharge_dates$discharge))[discharge_dates$discharge]
+ggplot(discharge_dates, aes(x=discharge, y=reorder(patient_id, discharge))) +
+  geom_point(color='red') +
+geom_point(data=hd, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
+  geom_point(data=hd2, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2, color='blue') +
   scale_size_continuous(range = c(0.5, 10)) +
-  geom_point(data=discharge_dates, aes(x=discharge, y=patient_id), inherit.aes = FALSE, color='red') +
+  scale_size(breaks = c(2000, 20000, 60000, 200000, 600000), range = c(0.5, 10)) +
+  scale_y_discrete() +
   scale_x_continuous(breaks=seq(0,max_hour,24)) +
   ggtitle("Patient Ambulation Distance by Time") +
   xlab("Hour of Stay") + 
   ylab("Patient ID")
+```
+
+```{r}
+library(tidyverse)
+
+hd <- read.csv("data_files/historical_details.csv",
+               fileEncoding="UTF-8-BOM",
+               header =TRUE)
+hd2 <- read.csv("data_files/historical_details_400-500.csv",
+               fileEncoding="UTF-8-BOM",
+               header =TRUE)
+pi <- read.csv("data_files/patient_info.csv",
+               fileEncoding="UTF-8-BOM",
+               header =TRUE)
+max_hour <- max(hd$hours_of_stay, na.rm=TRUE)
+max_day <- max(hd$Day.on.Unit, na.rm=TRUE)
+discharge_hours <- (pi$length_of_stay.days. * 24)
+discharge_dates <- data.frame(patient_id = pi$patient_ID, discharge = discharge_hours)
+
+ggplot(discharge_dates, aes(x=discharge, y=patient_id)) +
+  geom_point(color='red') +
+geom_point(data=hd, aes(x=hours_of_stay, y=patient_ID, size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
+  geom_point(data=hd2, aes(x=hours_of_stay, y=patient_ID, size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2, color='blue') +
+  scale_size_continuous(range = c(0.5, 10)) +
+  scale_size(breaks = c(2000, 20000, 60000, 200000, 600000), range = c(0.5, 10)) +
+  scale_x_continuous(breaks=seq(0,max_hour,24)) +
+  ggtitle("Patient Ambulation Distance by Time") +
+  xlab("Hour of Stay") + 
+  ylab("Patient ID")
+```
+```{r}
+library(randomForest) # basic implementation
+
+ambData <- read.csv("data_files/historical_details.csv",
+               fileEncoding="UTF-8-BOM",
+               header = TRUE)
+set.seed(100)
+trainRowCount <- floor(0.8 * nrow(ambData))
+trainIndex <- sample(1:nrow(ambData), trainRowCount)
+train <- ambData[trainIndex,]
+test <- ambData[-trainIndex,]
+summary(train)
+predictorColumns <- c("ambulation", "hour_of_day", "Day.on.Unit", "distance", "duration", "speed", "hours_of_stay")
+rf <- randomForest(train[predictorColumns], train$max_hour, ntree=100)
+predictions <- predict(rf, test[predictorColumns])
+predictions
+#model <- randomForest(max_hour ~ ., data = TrainSet, ntree = 1000, mtry = 20, importance = TRUE)
+#model
 ```
