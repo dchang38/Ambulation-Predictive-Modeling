@@ -92,5 +92,8 @@ def writeCsv(id):
 						writer.writerow({'Hour Of Stay': hour, 'Admitted': 'yes', 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 'no', 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0})
 			break	
 			
-patients = generatePatients()
-writeCsv(patients[0].id)
+string = "bb"
+test = string[1:len(string)-1]
+print(len(test))
+#patients = generatePatients()
+#writeCsv(patients[0].id)
