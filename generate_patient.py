@@ -47,7 +47,7 @@ def checkHour(hour, ambulations):
 
 
 # write patient id data to output file
-def writeCsv(id):
+def writePatientCsv(id):
 	for patient in patients:
 		if id == patient.id: # check patient id exists
 			filename = "Patient " + str(id) + " output.csv"
@@ -92,8 +92,31 @@ def writeCsv(id):
 						writer.writerow({'Hour Of Stay': hour, 'Admitted': 'yes', 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 'no', 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0})
 			break	
 			
-string = "bb"
-test = string[1:len(string)-1]
-print(len(test))
-#patients = generatePatients()
-#writeCsv(patients[0].id)
+def writeCsv(days):
+	filename = "percent_of_patients.csv"
+	file = open(filename, 'w')
+	with file:
+		fields = ["Day", "Percent"]
+		writer = csv.DictWriter(file, fieldnames=fields)
+		writer.writeheader()
+		for x in range(15):
+			writer.writerow({'Day' : x+1, 'Percent' : days[x+1]})
+
+
+def getPercentOfPatients(patients):
+	days = {}
+	for x in range(15):
+		days[x+1] = 0
+	for patient in patients:
+		s = set()
+		for ambulation in patient.ambulations:
+			if not ambulation["dayOnUnit"] in s:
+				days[ambulation["dayOnUnit"]] += 1
+				s.add(ambulation["dayOnUnit"])
+	for x in range(15):
+		days[x+1] = round((days[x+1] / len(patients)) * 100, 2)
+	return days
+
+patients = generatePatients()
+days = getPercentOfPatients(patients)
+writeCsv(days)
