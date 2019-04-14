@@ -67,11 +67,9 @@ trainRowCount <- floor(0.8 * nrow(ambData))
 trainIndex <- sample(1:nrow(ambData), trainRowCount)
 train <- ambData[trainIndex,]
 test <- ambData[-trainIndex,]
-summary(train)
 predictorColumns <- c("ambulation", "hour_of_day", "Day.on.Unit", "distance", "duration", "speed", "hours_of_stay")
 rf <- randomForest(train[predictorColumns], train$max_hour, ntree=100)
+print(rf)
 predictions <- predict(rf, test[predictorColumns])
-predictions
-#model <- randomForest(max_hour ~ ., data = TrainSet, ntree = 1000, mtry = 20, importance = TRUE)
-#model
+mean((test["max_hour"] - predictions)^2)
 ```
