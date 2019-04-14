@@ -29,9 +29,9 @@ icu = finalPatients$V6
 #### FROM PATIENT INFO 
 ## load data from local csv file
 patientInfo <- read.csv("data_files/patient_info.csv",
-               header =TRUE, skip = 0)
+               header =TRUE, skip = 1)
 
-patientInfo <- head(patientInfo,-3)
+patientInfo <- patientInfo[c(1:106), ]
 
 admissionDays = patientInfo$admission_date
 dischargeDays = patientInfo$discharge_date
@@ -43,15 +43,18 @@ patientInfo$t2d <- (as.Date(dischargeDays, format="%m/%d/%Y") - as.Date(transfer
 
 patientInfo$before <- (as.Date(admissionDays, format="%m/%d/%Y") - as.Date(firstAdmission, format="%m/%d/%Y"))
 
-for (i in 1:87){
-  patID = patientInfo$patient_ID[i]
-  icunew = finalPatients$V6[patID]
-  patientInfo$icuDay[i] <- icunew/24
-}
 
 for (i in 1:86){
-  if (patientInfo$a2d[i]>patientInfo$icuDay[i]){
-    patientInfo$a2i[i] <- patientInfo$a2d[i] - patientInfo$icuDay[i]
+  patID = strtoi(patientInfo$patient_ID[i])
+  icunew = finalPatients$V6[patID]
+  patientInfo$icuDay[i] <- icunew/24
+  
+}
+
+print(strtoi(patientInfo$a2d[1]) > patientInfo$icuDay[1])
+for (i in 1:106){
+  if (strtoi(patientInfo$a2d[i])>patientInfo$icuDay[i]){
+    patientInfo$a2i[i] <- strtoi(patientInfo$a2d[i]) - patientInfo$icuDay[i]
     
   } else {
     patientInfo$a2i[i] <- 0
@@ -193,15 +196,16 @@ DF9 <- melt(df9)
 DF9$id <- rep(1:86, times = 3)
 DF9$variable <- factor(DF9$variable, levels=c("t2d", "icuDay","a2i"))
 
-df10 <- data.frame(id=c(patientInfo$patient_ID),
-                  a2i= c(patientInfo$a2i),
-                  icuDay=c(patientInfo$icuDay),
-                  t2d = c(patientInfo$t2d), 
-                  before = c(patientInfo$before))
+
+df10 <- data.frame(id=c(1:86),
+                  a2i= c(patientInfo$a2i[1:86]),
+                  icuDay=c(patientInfo$icuDay[1:86]),
+                  t2d = c(patientInfo$t2d[1:86]), 
+                  before = c(patientInfo$before[1:86]))
 
 head(df10)
 
-df10 <- head(df10,-20)
+#df10 <- head(df10,-20)
 attach(df10)
 
 library(reshape2)
@@ -221,7 +225,7 @@ geom_bar(stat="identity", position=position_dodge())
 
 ```{r , echo=FALSE}
 ggplot(df3, aes(x=los)) + 
-  geom_histogram(color="black", fill="white", binwidth=1) 
+  geom_histogram(color="black", fill="white", binwidth=1, stat = "count") 
 ```
 
 ## Readmission Rates
