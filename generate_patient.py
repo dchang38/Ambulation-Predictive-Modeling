@@ -102,11 +102,16 @@ def writeCsv(days):
 		for x in range(15):
 			writer.writerow({'Day' : x+1, 'Percent' : days[x+1]})
 
-
 def getPercentOfPatients(patients):
 	days = {}
+	numPatients = {}
 	for x in range(15):
 		days[x+1] = 0
+		numPatients[x+1] = 0
+	for patient in patients:
+		for x in range(15):
+			if x <= (patient.maxHour/24):
+				numPatients[x+1] += 1
 	for patient in patients:
 		s = set()
 		for ambulation in patient.ambulations:
@@ -114,7 +119,7 @@ def getPercentOfPatients(patients):
 				days[ambulation["dayOnUnit"]] += 1
 				s.add(ambulation["dayOnUnit"])
 	for x in range(15):
-		days[x+1] = round((days[x+1] / len(patients)) * 100, 2)
+		days[x+1] = round((days[x+1] / numPatients[x+1]) * 100, 2)
 	return days
 
 patients = generatePatients()

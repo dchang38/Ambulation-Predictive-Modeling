@@ -56,23 +56,6 @@ geom_point(data=hd, aes(x=hours_of_stay, y=patient_ID, size=distance^(1/.7)), in
   ylab("Patient ID")
 ```
 ```{r}
-library(randomForest) # basic implementation
-
-ambData <- read.csv("data_files/historical_details.csv",
-               fileEncoding="UTF-8-BOM",
-               header = TRUE)
-set.seed(100)
-trainRowCount <- floor(0.8 * nrow(ambData))
-trainIndex <- sample(1:nrow(ambData), trainRowCount)
-train <- ambData[trainIndex,]
-test <- ambData[-trainIndex,]
-predictorColumns <- c("ambulation", "hour_of_day", "Day.on.Unit", "distance", "duration", "speed", "hours_of_stay")
-rf <- randomForest(train[predictorColumns], as.factor(train$max_hour), ntree=100, importance=TRUE)
-print(rf)
-predictions <- predict(rf, test[predictorColumns])
-mean((test["max_hour"] - predictions)^2)
-```
-```{r}
 library(tidyverse)
 
 hdr <- read.csv("data_files/historical_details_readmitted.csv",
@@ -97,8 +80,8 @@ discharge_dates_nr <- data.frame(patient_id = pnr$patient_ID, discharge = discha
 ggplot() +
   geom_point(data=discharge_dates_r, aes(x=discharge, y=reorder(patient_id, discharge)), color = 'red') +
   geom_point(data=hdr, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
-#geom_point(data=discharge_dates_nr, aes(x=discharge, y=reorder(patient_id, discharge)), color='blue') +
-#geom_point(data=hdnr, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
+geom_point(data=discharge_dates_nr, aes(x=discharge, y=reorder(patient_id, discharge)), color='blue') +
+geom_point(data=hdnr, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
   scale_size_continuous(range = c(0.5, 10)) +
   scale_size(breaks = c(2000, 20000, 60000, 200000, 600000), range = c(0.5, 10)) +
   scale_y_discrete() +
@@ -106,15 +89,4 @@ ggplot() +
   ggtitle("Patient Ambulation Distance by Time") +
   xlab("Hour of Stay") + 
   ylab("Patient ID")
-```
-```{r}
-library(tidyverse)
-
-pop <- read.csv("data_files/percent_of_patients.csv",
-               fileEncoding="UTF-8-BOM",
-               header =TRUE)
-ggplot(data=pop, aes(x=Day, y=Percent)) + 
-  geom_bar(stat="identity", fill="steelblue") +
-  geom_text(aes(label=Percent), vjust=-0.3, size=3.5)+
-  theme_minimal()
 ```
