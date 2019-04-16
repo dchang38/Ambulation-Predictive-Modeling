@@ -47,50 +47,57 @@ def checkHour(hour, ambulations):
 
 
 # write patient id data to output file
-def writePatientCsv(id):
-	for patient in patients:
-		if id == patient.id: # check patient id exists
-			filename = "Patient " + str(id) + " output.csv"
-			file = open(filename, 'w')
-			with file:
-				fields = ["Hour Of Stay", "Admitted", "Date", "Ambulations", "Daily Ambulation Total", "Hour", "Walking", "Number Of Times", "Distance", "Duration", "Average Speed"]
-				writer = csv.DictWriter(file, fieldnames=fields)
-				writer.writeheader()
-				date = patient.ambulations[0]["transferDate"]
-				dayNum = 0
-				dailyAmb = 0
-				amb = 0
-				for hour in range(patient.maxHour + 1):
-					day = int(hour / 24)
-					if day != dayNum:
-						dailyAmb = 0
-						dayNum = day
-					if checkHour(hour, patient.ambulations) == True:
-						numTimes = 0
-						amb = 0
-						avgSpeed = 0.0
-						ambulationDate = ""
-						hourOfDay = 0
-						distance = 0.0
-						duration = 0.0
-						for ambulation in patient.ambulations:
-							if hour == ambulation["hoursOfStay"]:
-								hourOfDay = ambulation["hourOfDay"]
-								ambulationDate = ambulation["date"]
-								numTimes += 1
-								amb += int(ambulation["ambulation"])
-								dailyAmb += 1
-								distance += ambulation["distance"]
-								duration += ambulation["duration"]
-								avgSpeed = distance / duration
-						writer.writerow({'Hour Of Stay': hour, 'Admitted': 'yes', 'Date': ambulationDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb,'Hour': hourOfDay, 'Walking': 'yes', 'Number Of Times': numTimes, 'Distance': distance, 'Duration': duration, 'Average Speed': avgSpeed})
-					else:
-						newDate = date
-						for x in range(day):
-							newDate = incrementDate(newDate)
-						hourOfDay = hour % 24
-						writer.writerow({'Hour Of Stay': hour, 'Admitted': 'yes', 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 'no', 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0})
-			break	
+def writePatientsCsv(patients):
+	filename = "Patients_hourly_data.csv"
+	file = open(filename, 'w', newline = '')
+	with file:
+		fields = ["Patient ID", "Day On Unit", "Hour Of Stay", "Date", "Ambulations", "Daily Ambulation Total", "Hour", "Walking", "Number Of Times", "Distance", "Duration", "Average Speed", "Hours Since Last Walk", "Distance Of Last Walk", "Total Distance Walked"]
+		writer = csv.DictWriter(file, fieldnames=fields)
+		writer.writeheader()
+		for patient in patients:
+			id = patient.id
+			date = patient.ambulations[0]["transferDate"]
+			dayNum = 0
+			dailyAmb = 0
+			amb = 0
+			hasWalked = False
+			hoursSinceLastWalk = 0
+			totalDistance = 0
+			distance = 0
+			for hour in range(patient.maxHour + 1):
+				day = int(hour / 24)
+				if day != dayNum: # reset number of daily ambulations
+					dailyAmb = 0
+					dayNum = day
+				if checkHour(hour, patient.ambulations) == True: # patient walked during this hour
+					hasWalked = True
+					hoursSinceLastWalk = 0
+					numTimes = 0
+					amb = 0
+					avgSpeed = 0.0
+					ambulationDate = ""
+					hourOfDay = 0
+					duration = 0.0
+					for ambulation in patient.ambulations: # find every patient ambulation in this hour
+						if hour == ambulation["hoursOfStay"]:
+							hourOfDay = ambulation["hourOfDay"]
+							ambulationDate = ambulation["date"]
+							numTimes += 1
+							amb += int(ambulation["ambulation"])
+							dailyAmb += 1
+							distance = ambulation["distance"]
+							totalDistance += distance
+							duration += ambulation["duration"]
+							avgSpeed = distance / duration
+					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': ambulationDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb,'Hour': hourOfDay, 'Walking': 'yes', 'Number Of Times': numTimes, 'Distance': distance, 'Duration': duration, 'Average Speed': avgSpeed, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})
+				else: # patient didn't walk this hour
+					if hasWalked == True: # increment time since last walk
+						hoursSinceLastWalk += 1
+					newDate = date
+					for x in range(day):
+						newDate = incrementDate(newDate)
+					hourOfDay = hour % 24
+					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 'no', 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})	
 			
 def writeCsv(days):
 	filename = "percent_of_patients.csv"
@@ -123,5 +130,4 @@ def getPercentOfPatients(patients):
 	return days
 
 patients = generatePatients()
-days = getPercentOfPatients(patients)
-writeCsv(days)
+writePatientsCsv(patients)
