@@ -211,6 +211,75 @@ attach(df10)
 library(reshape2)
 DF10 <- melt(df10, id.vars = c("id"))
 DF10$variable <- factor(DF10$variable, levels=c("t2d", "icuDay","a2i", "before"))
+
+for (i in 1:106){
+  
+  numWalksDay1 = 0
+  disWalksDay1 = 0
+  numWalksDay2 = 0
+  disWalksDay2 = 0
+  numWalksDay3 = 0
+  disWalksDay3 = 0
+  
+  for (x in 1:795){
+    
+    
+    if (strtoi(patientInfo$patient_ID[i]) == historical$patient_ID[x]){
+      
+      if (historical$Day.on.Unit[x] == 1) {
+        
+        numWalksDay1 = numWalksDay1 + 1
+        disWalksDay1 = disWalksDay1 + historical$distance[x]
+        
+      } else if (historical$Day.on.Unit[x] == 2){
+        
+        numWalksDay2 = numWalksDay2 + 1
+        disWalksDay2 = disWalksDay2 + historical$distance[x]
+        
+      } else if (historical$Day.on.Unit[x] == 3){
+        
+        numWalksDay3 = numWalksDay3 + 1
+        disWalksDay3 = disWalksDay3 + historical$distance[x]
+        
+      } 
+     
+      
+    }
+    
+  }
+  
+    patientInfo$numWalksDay1[i] <- numWalksDay1
+    patientInfo$disWalksDay1[i] <- disWalksDay1
+    patientInfo$numWalksDay2[i] <- numWalksDay2
+    patientInfo$disWalksDay2[i] <- disWalksDay2
+    patientInfo$numWalksDay3[i] <- numWalksDay3
+    patientInfo$disWalksDay3[i] <- disWalksDay3
+  
+}
+
+df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  afterDay3= c(patientInfo$total - 3),
+                  hours2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
+                  dayTransferred = c(patientInfo$transferWeekday), 
+                  numWalksDay1 = c(patientInfo$numWalksDay1),
+                  disWalksDay1 = c(patientInfo$disWalksDay1),
+                  numWalksDay2 = c(patientInfo$numWalksDay2),
+                  disWalksDay2 = c(patientInfo$disWalksDay2),
+                  numWalksDay3 = c(patientInfo$numWalksDay3),
+                  disWalksDay3 = c(patientInfo$disWalksDay3))
+
+library(randomForest)
+set.seed(100)
+trainRowCount <- floor(0.8 * nrow(df11))
+trainIndex <- sample(1:nrow(df11), trainRowCount)
+train <- df11[trainIndex,]
+test <- df11[-trainIndex,]
+predictorColumns <- c("hours2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "numWalksDay2", "disWalksDay2", "numWalksDay3", "disWalksDay3")
+rf <- randomForest(afterDay3 ~ hours2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 + numWalksDay2 + disWalksDay2 + numWalksDay3 + disWalksDay3, data = train, ntree=100, importance = TRUE)
+print(rf)
+predictions <- predict(rf, test[predictorColumns])
+#mean((test["afterDay3"] - predictions)^2)
+varImpPlot(rf,type=2)
 ```
 
 ## Discharge/Transfer Day of Week 
