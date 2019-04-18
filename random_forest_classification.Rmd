@@ -5,14 +5,16 @@ ambData <- read.csv("Patients_hourly_data.csv",
                fileEncoding="UTF-8-BOM",
                header = TRUE)
 set.seed(100)
-ambData$
-trainRowCount <- floor(0.8 * nrow(ambData))
-trainIndex <- sample(1:nrow(ambData), trainRowCount)
+trainRowCount <- floor(0.7 * nrow(ambData))
+trainIndex <- sample(nrow(ambData), trainRowCount)
 train <- ambData[trainIndex,]
 test <- ambData[-trainIndex,]
 predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total", "Hour", "Number.Of.Times", "Distance", "Duration", "Average.Speed", "Hours.Since.Last.Walk", "Distance.Of.Last.Walk", "Total.Distance.Walked")
-rf <- randomForest(train[predictorColumns], as.factor(train$Walking), ntree=100)
-head(train)
+rf <- randomForest(Walking ~ Day.On.Unit + Hour.Of.Stay + Ambulations + Daily.Ambulation.Total + Hour + Number.Of.Times + Hours.Since.Last.Walk + Distance.Of.Last.Walk + Total.Distance.Walked, data = train, ntree=100, importance = TRUE)
+#rf <- randomForest(Walking ~ .,)
 predictions <- predict(rf, test[predictorColumns])
-print(predictions)
+#print(predictions)
+print(rf)
+#print(importance(rf,type = 2)) 
+#varImpPlot(rf,type=2)
 ```
