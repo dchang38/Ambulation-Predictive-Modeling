@@ -1,5 +1,7 @@
 ```{r}
 library(randomForest)
+library(pdp)
+library(ggplot2)
 
 ambData <- read.csv("Patients_hourly_data.csv",
                fileEncoding="UTF-8-BOM",
@@ -17,4 +19,7 @@ predictions <- predict(rf, test[predictorColumns])
 print(rf)
 #print(importance(rf,type = 2)) 
 #varImpPlot(rf,type=2)
+par <- partial(rf, pred.var = c("Day.On.Unit", "Hour.Of.Stay"), chull = TRUE)
+plot <- autoplot(par, contour = TRUE)
+print(plot)
 ```
