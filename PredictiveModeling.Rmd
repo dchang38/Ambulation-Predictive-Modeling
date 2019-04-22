@@ -220,6 +220,15 @@ for (i in 1:106){
   disWalksDay2 = 0
   numWalksDay3 = 0
   disWalksDay3 = 0
+  totalTimeDay1 = 0
+  totalTimeDay2 = 0
+  totalTimeDay3 = 0
+  averageSpeedDay1 = 0
+  averageSpeedDay2 = 0
+  averageSpeedDay3 = 0
+  maxSpeedDay1 <- c()
+  maxSpeedDay2 <- c()
+  maxSpeedDay3 <- c()
   
   for (x in 1:795){
     
@@ -230,21 +239,34 @@ for (i in 1:106){
         
         numWalksDay1 = numWalksDay1 + 1
         disWalksDay1 = disWalksDay1 + historical$distance[x]
+        totalTimeDay1 = totalTimeDay1 + historical$duration[x]
+        averageSpeedDay1 = averageSpeedDay1 + historical$speed[x]
+        maxSpeedDay1 <- c(maxSpeedDay1, historical$speed)
         
       } else if (historical$Day.on.Unit[x] == 2){
         
         numWalksDay2 = numWalksDay2 + 1
         disWalksDay2 = disWalksDay2 + historical$distance[x]
+        totalTimeDay2 = totalTimeDay2 + historical$duration[x]
+        averageSpeedDay2 = averageSpeedDay2 + historical$speed[x]
+        maxSpeedDay2 <- c(maxSpeedDay2, historical$speed)
+
         
       } else if (historical$Day.on.Unit[x] == 3){
         
         numWalksDay3 = numWalksDay3 + 1
         disWalksDay3 = disWalksDay3 + historical$distance[x]
+        totalTimeDay3 = totalTimeDay3 + historical$duration[x]
+        averageSpeedDay3 = averageSpeedDay3 + historical$speed[x]
+        maxSpeedDay3 <- c(maxSpeedDay3, historical$speed)
         
       } 
-     
       
     }
+    
+    patientInfo$maxSpeedDay1[i] <- max(maxSpeedDay1)
+    patientInfo$maxSpeedDay2[i] <- max(maxSpeedDay2)
+    patientInfo$maxSpeedDay3[i] <- max(maxSpeedDay3)
     
   }
   
@@ -254,37 +276,73 @@ for (i in 1:106){
     patientInfo$disWalksDay2[i] <- disWalksDay2
     patientInfo$numWalksDay3[i] <- numWalksDay3
     patientInfo$disWalksDay3[i] <- disWalksDay3
-  
+    patientInfo$totalTimeDay1[i] <- totalTimeDay1
+    patientInfo$totalTimeDay2[i] <- totalTimeDay2
+    patientInfo$totalTimeDay3[i] <- totalTimeDay3
+    
+    
+    if  (numWalksDay1 != 0) {
+      patientInfo$averageSpeedDay1[i] <- averageSpeedDay1/numWalksDay1
+    } else {
+      patientInfo$averageSpeedDay1[i] <- 0
+    }
+    if  (numWalksDay2 != 0) {
+      patientInfo$averageSpeedDay2[i] <- averageSpeedDay2/numWalksDay2
+    } else {
+      patientInfo$averageSpeedDay2[i] <- 0
+    }
+    if  (numWalksDay3 != 0) {
+      patientInfo$averageSpeedDay3[i] <- averageSpeedDay3/numWalksDay3
+    } else {
+      patientInfo$averageSpeedDay3[i] <- 0
+    }
 }
 
 df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
-                  afterDay3= c(patientInfo$total - 3),
-                  hours2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
+                  afterDay3= c((strtoi(patientInfo$length_of_stay.days.) - 3)),
+                  days2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
                   dayTransferred = c(patientInfo$transferWeekday), 
                   numWalksDay1 = c(patientInfo$numWalksDay1),
                   disWalksDay1 = c(patientInfo$disWalksDay1),
                   numWalksDay2 = c(patientInfo$numWalksDay2),
                   disWalksDay2 = c(patientInfo$disWalksDay2),
                   numWalksDay3 = c(patientInfo$numWalksDay3),
-                  disWalksDay3 = c(patientInfo$disWalksDay3))
+                  disWalksDay3 = c(patientInfo$disWalksDay3),
+                  totalTimeDay1 = c(patientInfo$totalTimeDay1),
+                  totalTimeDay2 = c(patientInfo$totalTimeDay2),
+                  totalTimeDay3 = c(patientInfo$totalTimeDay3),
+                  averageSpeedDay1 = c(patientInfo$averageSpeedDay1),
+                  averageSpeedDay2 = c(patientInfo$averageSpeedDay2),
+                  averageSpeedDay3 = c(patientInfo$averageSpeedDay3),
+                  maxSpeedDay1 = c(patientInfo$maxSpeedDay1),
+                  maxSpeedDay2 = c(patientInfo$maxSpeedDay2),
+                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3))
+
+df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101), ]
 
 library(randomForest)
+library(pdp)
 set.seed(100)
 trainRowCount <- floor(0.8 * nrow(df11))
 trainIndex <- sample(1:nrow(df11), trainRowCount)
 train <- df11[trainIndex,]
 test <- df11[-trainIndex,]
-predictorColumns <- c("hours2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "numWalksDay2", "disWalksDay2", "numWalksDay3", "disWalksDay3")
-rf <- randomForest(afterDay3 ~ hours2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 + numWalksDay2 + disWalksDay2 + numWalksDay3 + disWalksDay3, data = train, ntree=100, importance = TRUE)
-print(rf)
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "numWalksDay2", "disWalksDay2", "numWalksDay3", "disWalksDay3")
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 + numWalksDay2 + disWalksDay2 + numWalksDay3 + disWalksDay3, data = train, ntree=100, importance = TRUE)
+
 predictions <- predict(rf, test[predictorColumns])
 #mean((test["afterDay3"] - predictions)^2)
-varImpPlot(rf,type=2)
+
 ```
 
 ## Discharge/Transfer Day of Week 
 
 ```{r , echo=FALSE}
+print(rf)
+varImpPlot(rf,type=2)
+par <- partial(rf, pred.var = c("dayTransferred", "disWalksDay2"), chull = TRUE)
+plot <- autoplot(par, contour = TRUE)
+print(plot)
 library(ggplot2)
 ggplot(data=df2, aes(x=day, y=count, fill=dis)) +
 geom_bar(stat="identity", position=position_dodge())
