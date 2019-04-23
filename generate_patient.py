@@ -89,7 +89,7 @@ def writePatientsCsv(patients):
 							totalDistance += distance
 							duration += ambulation["duration"]
 							avgSpeed = distance / duration
-					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': ambulationDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb,'Hour': hourOfDay, 'Walking': 'yes', 'Number Of Times': numTimes, 'Distance': distance, 'Duration': duration, 'Average Speed': avgSpeed, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})
+					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': ambulationDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb,'Hour': hourOfDay, 'Walking': 1, 'Number Of Times': numTimes, 'Distance': distance, 'Duration': duration, 'Average Speed': avgSpeed, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})
 				else: # patient didn't walk this hour
 					if hasWalked == True: # increment time since last walk
 						hoursSinceLastWalk += 1
@@ -97,7 +97,7 @@ def writePatientsCsv(patients):
 					for x in range(day):
 						newDate = incrementDate(newDate)
 					hourOfDay = hour % 24
-					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 'no', 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})	
+					writer.writerow({'Patient ID': id, 'Day On Unit': day, 'Hour Of Stay': hour, 'Date': newDate, 'Ambulations': amb, 'Daily Ambulation Total': dailyAmb, 'Hour': hourOfDay, 'Walking': 0, 'Number Of Times': 0, 'Distance': 0, 'Duration': 0, 'Average Speed': 0, 'Hours Since Last Walk': hoursSinceLastWalk, 'Distance Of Last Walk': distance, 'Total Distance Walked': totalDistance})	
 			
 def writeCsv(days):
 	filename = "percent_of_patients.csv"
