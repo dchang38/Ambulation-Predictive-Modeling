@@ -4,7 +4,7 @@ library(pdp)
 library(ggplot2)
 library(rpart)
 
-ambData <- read.csv("Patients_hourly_data.csv",
+ambData <- read.csv("data_files/Patients_hourly_data_3.csv",
                fileEncoding="UTF-8-BOM",
                header = TRUE)
 set.seed(100)
@@ -13,17 +13,12 @@ trainIndex <- sample(nrow(ambData), trainRowCount)
 train <- ambData[trainIndex,]
 test <- ambData[-trainIndex,]
 predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total", "Hour", "Number.Of.Times", "Hours.Since.Last.Walk", "Distance.Of.Last.Walk", "Total.Distance.Walked")
-rf <- randomForest(as.factor(Walking) ~ Day.On.Unit + Hour.Of.Stay + Ambulations + Daily.Ambulation.Total + Hour + Number.Of.Times + Hours.Since.Last.Walk + Distance.Of.Last.Walk + Total.Distance.Walked, data = train, ntree=100)
-#rf <- randomForest(Walking ~ .,data = train, ntree=100, importance = TRUE)
-predictions <- predict(rf, test[predictorColumns])
-print(rf)
+rf <- randomForest(as.factor(Going_to_Walk) ~ Day.On.Unit + Hour.Of.Stay + Ambulations + Daily.Ambulation.Total + Hour + Number.Of.Times + Hours.Since.Last.Walk + Distance.Of.Last.Walk + Total.Distance.Walked, data = train, ntree=100, importance = TRUE)
+predictions <- predict(rf, test, type="prob")
+#print(rf)
 #print(predictions)
-#tree<- prune(rf, cp=4)
-#importance(rf)
-#text(rf, use.n=TRUE, all=TRUE, cex=.8)
-#print(importance(rf,type = 2)) 
 varImpPlot(rf,type=2)
-par <- partial(rf, pred.var = c("Number.Of.Times", "Day.On.Unit"), chull = TRUE)
+par <- partial(rf, pred.var = c("Total.Distance.Walked"))
 plot <- autoplot(par, contour = TRUE)
 print(plot)
 ```
