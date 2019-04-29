@@ -18,7 +18,7 @@ predictions <- predict(rf, test, type="prob")
 #print(rf)
 #print(predictions)
 varImpPlot(rf,type=2)
-par <- partial(rf, pred.var = c("Total.Distance.Walked"))
+par <- partial(rf, pred.var = c("Total.Distance.Walked"), prob = "true")
 plot <- autoplot(par, contour = TRUE)
 print(plot)
 ```
