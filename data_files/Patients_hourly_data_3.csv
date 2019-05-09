@@ -1,4 +1,4 @@
-﻿Patient ID,Day On Unit,Hour Of Stay,Date,Ambulations,Daily Ambulation Total,Hour,Going_to_Walk,Walking,Number Of Times,Distance,Duration,Average Speed,Hours Since Last Walk,Distance Of Last Walk,Total Distance Walked
+﻿Patient ID,Day On Unit,Hour Of Stay,Date,Ambulations,Daily Ambulation Total,Hour Of Day,Going_to_Walk,Walking,Number Of Times,Distance,Duration,Average Speed,Hours Since Last Walk,Distance Of Last Walk,Total Distance Walked
 1,0,0,9/1/2016,0,0,0,0,0,0,0,0,0,0,0,0
 1,0,1,9/1/2016,0,0,1,0,0,0,0,0,0,0,0,0
 1,0,2,9/1/2016,0,0,2,0,0,0,0,0,0,0,0,0
