@@ -426,7 +426,7 @@ ggplot(df6, aes(x=spe))  +
 ```{r , echo=FALSE}
 ggplot(log10(df7), aes(x=dis))  +
   geom_histogram(color="black", fill="white", binwidth=0.1) +
-scale_x_continuous(breaks=c(2,2.5,2.7,3,3.5,4), labels=c("100","316",  "447","1000","3160", "10000")) + labs(x = "Distance (meters)") + geom_vline(xintercept = 2.7, linetype="dotted", 
+scale_x_continuous(breaks=c(2,2.5,2.7,3,3.5,4), labels=c("100","316",  "447","1000","3160", "10000")) + labs(x = "Distance (feet)") + geom_vline(xintercept = 2.7, linetype="dotted", 
                 color = "blue", size=1.5)
 ```
 
