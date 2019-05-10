@@ -220,15 +220,20 @@ for (i in 1:106){
   disWalksDay2 = 0
   numWalksDay3 = 0
   disWalksDay3 = 0
+  numWalksDay4 = 0 
+  disWalksDay4 = 0
   totalTimeDay1 = 0
   totalTimeDay2 = 0
   totalTimeDay3 = 0
+  totalTimeDay4 = 0
   averageSpeedDay1 = 0
   averageSpeedDay2 = 0
   averageSpeedDay3 = 0
+  averageSpeedDay4 = 0 
   maxSpeedDay1 <- c()
   maxSpeedDay2 <- c()
   maxSpeedDay3 <- c()
+  maxSpeedDay4 <- c()
   
   for (x in 1:795){
     
@@ -241,7 +246,7 @@ for (i in 1:106){
         disWalksDay1 = disWalksDay1 + historical$distance[x]
         totalTimeDay1 = totalTimeDay1 + historical$duration[x]
         averageSpeedDay1 = averageSpeedDay1 + historical$speed[x]
-        maxSpeedDay1 <- c(maxSpeedDay1, historical$speed)
+        maxSpeedDay1 <- c(maxSpeedDay1, historical$speed[x])
         
       } else if (historical$Day.on.Unit[x] == 2){
         
@@ -249,7 +254,7 @@ for (i in 1:106){
         disWalksDay2 = disWalksDay2 + historical$distance[x]
         totalTimeDay2 = totalTimeDay2 + historical$duration[x]
         averageSpeedDay2 = averageSpeedDay2 + historical$speed[x]
-        maxSpeedDay2 <- c(maxSpeedDay2, historical$speed)
+        maxSpeedDay2 <- c(maxSpeedDay2, historical$speed[x])
 
         
       } else if (historical$Day.on.Unit[x] == 3){
@@ -258,27 +263,55 @@ for (i in 1:106){
         disWalksDay3 = disWalksDay3 + historical$distance[x]
         totalTimeDay3 = totalTimeDay3 + historical$duration[x]
         averageSpeedDay3 = averageSpeedDay3 + historical$speed[x]
-        maxSpeedDay3 <- c(maxSpeedDay3, historical$speed)
+        maxSpeedDay3 <- c(maxSpeedDay3, historical$speed[x])
         
-      } 
+      } else if (historical$Day.on.Unit[x] == 4){
+        
+        numWalksDay4 = numWalksDay4 + 1
+        disWalksDay4 = disWalksDay4 + historical$distance[x]
+        totalTimeDay4 = totalTimeDay4 + historical$duration[x]
+        averageSpeedDay4 = averageSpeedDay4 + historical$speed[x]
+        maxSpeedDay4 <- c(maxSpeedDay4, historical$speed[x])
+        
+      }
+      
+      if (numWalksDay1 != 0) {
+        patientInfo$maxSpeedDay1[i] <- max(maxSpeedDay1)
+      } else {
+        patientInfo$maxSpeedDay1[i] <- 0
+      }
+      if (numWalksDay2 != 0) {
+        patientInfo$maxSpeedDay2[i] <- max(maxSpeedDay2)
+      } else {
+        patientInfo$maxSpeedDay2[i] <- 0
+      }
+      if (numWalksDay3 != 0) {
+        patientInfo$maxSpeedDay3[i] <- max(maxSpeedDay3)
+      } else {
+        patientInfo$maxSpeedDay3[i] <- 0
+      }
+      if (numWalksDay4 != 0) {
+        patientInfo$maxSpeedDay4[i] <- max(maxSpeedDay4)
+      } else {
+        patientInfo$maxSpeedDay4[i] <- 0
+      }
       
     }
     
-    patientInfo$maxSpeedDay1[i] <- max(maxSpeedDay1)
-    patientInfo$maxSpeedDay2[i] <- max(maxSpeedDay2)
-    patientInfo$maxSpeedDay3[i] <- max(maxSpeedDay3)
-    
   }
-  
+    
     patientInfo$numWalksDay1[i] <- numWalksDay1
     patientInfo$disWalksDay1[i] <- disWalksDay1
     patientInfo$numWalksDay2[i] <- numWalksDay2
     patientInfo$disWalksDay2[i] <- disWalksDay2
     patientInfo$numWalksDay3[i] <- numWalksDay3
     patientInfo$disWalksDay3[i] <- disWalksDay3
+    patientInfo$numWalksDay4[i] <- numWalksDay4
+    patientInfo$disWalksDay4[i] <- disWalksDay4
     patientInfo$totalTimeDay1[i] <- totalTimeDay1
     patientInfo$totalTimeDay2[i] <- totalTimeDay2
     patientInfo$totalTimeDay3[i] <- totalTimeDay3
+    patientInfo$totalTimeDay4[i] <- totalTimeDay4
     
     
     if  (numWalksDay1 != 0) {
@@ -296,6 +329,11 @@ for (i in 1:106){
     } else {
       patientInfo$averageSpeedDay3[i] <- 0
     }
+    if  (numWalksDay4 != 0) {
+      patientInfo$averageSpeedDay4[i] <- averageSpeedDay4/numWalksDay4
+    } else {
+      patientInfo$averageSpeedDay4[i] <- 0
+    }
 }
 
 df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
@@ -308,15 +346,20 @@ df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
                   disWalksDay2 = c(patientInfo$disWalksDay2),
                   numWalksDay3 = c(patientInfo$numWalksDay3),
                   disWalksDay3 = c(patientInfo$disWalksDay3),
+                  numWalksDay4 = c(patientInfo$numWalksDay4),
+                  disWalksDay4 = c(patientInfo$disWalksDay4),
                   totalTimeDay1 = c(patientInfo$totalTimeDay1),
                   totalTimeDay2 = c(patientInfo$totalTimeDay2),
                   totalTimeDay3 = c(patientInfo$totalTimeDay3),
+                  totalTimeDay4 = c(patientInfo$totalTimeDay4),
                   averageSpeedDay1 = c(patientInfo$averageSpeedDay1),
                   averageSpeedDay2 = c(patientInfo$averageSpeedDay2),
                   averageSpeedDay3 = c(patientInfo$averageSpeedDay3),
+                  averageSpeedDay4 = c(patientInfo$averageSpeedDay4),
                   maxSpeedDay1 = c(patientInfo$maxSpeedDay1),
                   maxSpeedDay2 = c(patientInfo$maxSpeedDay2),
-                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3))
+                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3),
+                  maxSpeedDay4 = c(patientInfo$maxSpeedDay4))
 
 df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101), ]
 
@@ -327,8 +370,8 @@ trainRowCount <- floor(0.8 * nrow(df11))
 trainIndex <- sample(1:nrow(df11), trainRowCount)
 train <- df11[trainIndex,]
 test <- df11[-trainIndex,]
-predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "numWalksDay2", "disWalksDay2", "numWalksDay3", "disWalksDay3")
-rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 + numWalksDay2 + disWalksDay2 + numWalksDay3 + disWalksDay3, data = train, ntree=100, importance = TRUE)
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "totalTimeDay1", "averageSpeedDay1","maxSpeedDay1")
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 +  totalTimeDay1 + averageSpeedDay1 + maxSpeedDay1, data = train, ntree = 100, importance = TRUE)
 
 predictions <- predict(rf, test[predictorColumns])
 #mean((test["afterDay3"] - predictions)^2)
@@ -340,8 +383,10 @@ predictions <- predict(rf, test[predictorColumns])
 ```{r , echo=FALSE}
 print(rf)
 varImpPlot(rf,type=2)
-par <- partial(rf, pred.var = c("dayTransferred", "disWalksDay2"), chull = TRUE)
-plot <- autoplot(par, contour = TRUE)
+par <- partial(rf, pred.var = c("dayTransferred"), chull = TRUE)
+str(par)
+#plot <- autoplot(par, contour = TRUE)
+
 print(plot)
 library(ggplot2)
 ggplot(data=df2, aes(x=day, y=count, fill=dis)) +
