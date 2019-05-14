@@ -29,7 +29,7 @@ icu = finalPatients$V6
 #### FROM PATIENT INFO 
 ## load data from local csv file
 patientInfo <- read.csv("data_files/patient_info.csv",
-               header =TRUE, skip = 1)
+               header =TRUE, skip = 0)
 
 patientInfo <- patientInfo[c(1:106), ]
 
@@ -52,7 +52,7 @@ for (i in 1:86){
 }
 
 print(strtoi(patientInfo$a2d[1]) > patientInfo$icuDay[1])
-for (i in 1:106){
+for (i in 1:82){
   if (strtoi(patientInfo$a2d[i])>patientInfo$icuDay[i]){
     patientInfo$a2i[i] <- strtoi(patientInfo$a2d[i]) - patientInfo$icuDay[i]
     
@@ -189,13 +189,20 @@ df9 <- head(df9,-20)
 attach(df9)
 df9 <- df9[order(total) , ] 
 df9$total <- NULL
+df9 <- df9[-c(83,84,85,86), ]
 
 
 library(reshape2)
-DF9 <- melt(df9)
-DF9$id <- rep(1:86, times = 3)
-DF9$variable <- factor(DF9$variable, levels=c("t2d", "icuDay","a2i"))
+DF9A <- melt(df9)
+DF9A$id <- rep(1:82, times = 3)
+DF9A$variable <- factor(DF9A$variable, levels=c("t2d", "icuDay","a2i"))
 
+df9 <- df9[,-2]
+df9 <- df9[,-2]
+
+DF9B <- melt(df9)
+DF9B$id <- rep(1:82, times = 1)
+DF9B$variable <- factor(DF9B$variable, levels=c("t2d"))
 
 df10 <- data.frame(id=c(1:86),
                   a2i= c(patientInfo$a2i[1:86]),
@@ -212,7 +219,7 @@ library(reshape2)
 DF10 <- melt(df10, id.vars = c("id"))
 DF10$variable <- factor(DF10$variable, levels=c("t2d", "icuDay","a2i", "before"))
 
-for (i in 1:106){
+for (i in 1:86){
   
   numWalksDay1 = 0
   disWalksDay1 = 0
@@ -361,7 +368,8 @@ df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
                   maxSpeedDay3 = c(patientInfo$maxSpeedDay3),
                   maxSpeedDay4 = c(patientInfo$maxSpeedDay4))
 
-df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101), ]
+df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101,83,84,85,86), ]
+df11 <- head(df11,-8)
 
 library(randomForest)
 library(pdp)
@@ -375,6 +383,63 @@ rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + d
 
 predictions <- predict(rf, test[predictorColumns])
 #mean((test["afterDay3"] - predictions)^2)
+
+totalDay = rep(0, 7)
+dayCounts = rep(0, 7)
+averageTime = rep(0, 7)
+
+for (i in 1:length(df11$dayTransferred)){
+  
+  
+  if (identical(toString(df11$dayTransferred[i]), "Monday")){
+    
+    dayCounts[1] = dayCounts[1] + 1
+    totalDay[1] = totalDay[1] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Tuesday")){
+    
+    dayCounts[2] = dayCounts[2] + 1
+    totalDay[2] = totalDay[2] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Wednesday")){
+    
+    dayCounts[3] = dayCounts[3] + 1
+    totalDay[3] = totalDay[3] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Thursday")){
+    
+    dayCounts[4] = dayCounts[4] + 1
+    totalDay[4] = totalDay[4] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Friday")){
+    
+    dayCounts[5] = dayCounts[5] + 1
+    totalDay[5] = totalDay[5] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Saturday")){
+    
+    dayCounts[6] = dayCounts[6] + 1
+    totalDay[6] = totalDay[6] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Sunday")){
+    
+    dayCounts[7] = dayCounts[7] + 1
+    totalDay[7] = totalDay[7] + df11$afterDay3[i]
+    
+  } else {
+    
+  }
+  
+} 
+
+for (x in 1:7) {
+  
+  averageTime[x] = totalDay[x]/dayCounts[x]
+  
+}
+
+df12 <- data.frame(days=c(1:7),
+                  average= c(averageTime))
 
 ```
 
@@ -441,7 +506,10 @@ ggplot(df8/60, aes(x=dur))  +
 
 ```{r , echo=FALSE}
 #DF9[, 3] <- log(24*DF9[3])
-ggplot(DF9, aes(x = id, y = value, fill = variable)) +
+ggplot(DF9A, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + labs(y = "Time (Day)") + labs(x = "Patient") + scale_x_continuous(breaks=c(0), labels=c(""))
+
+ggplot(DF9B, aes(x = id, y = value, fill = variable)) +
   geom_bar(stat = "identity") + labs(y = "Time (Day)") + labs(x = "Patient") + scale_x_continuous(breaks=c(0), labels=c(""))
 ```
 
@@ -450,4 +518,14 @@ ggplot(DF9, aes(x = id, y = value, fill = variable)) +
 ```{r , echo=FALSE}
 ggplot(DF10, aes(x = id, y = value, fill = variable)) +
   geom_bar(stat = "identity") + scale_y_continuous(breaks=c(0, 586), labels=c("08/22/16", "01/27/19")) + labs(y = "Day") + coord_flip() + scale_fill_manual(values = c("Green","Yellow", "Red", "#e8e8e8"))
+```
+
+## After Day 3 
+
+```{r , echo=FALSE}
+
+library(ggplot2)
+# Basic scatter plot
+ggplot(df12, aes(x= days, y=averageTime)) + geom_point()
+
 ```
