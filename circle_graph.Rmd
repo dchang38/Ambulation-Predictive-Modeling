@@ -81,7 +81,7 @@ pr$patient_ID <- factor(pr$patient_ID, levels=unique(pr$patient_ID))
 #discharge_dates_nr <- data.frame(patient_id = pnr$patient_ID, discharge = discharge_hours_nr)
 
 ggplot(data=pr) +
-  geom_point(aes(x=hours_of_stay, y=patient_ID), color = 'red') +
+  #geom_point(aes(x=hours_of_stay, y=patient_ID), color = 'red') +
   geom_point(data=hdr, aes(x=hours_of_stay, y=patient_ID, size=distance^(1/.7)), inherit.aes=TRUE, alpha = 0.2) +
 #geom_point(data=discharge_dates_nr, aes(x=discharge, y=reorder(patient_id, discharge)), color='blue') +
 #geom_point(data=hdnr, aes(x=hours_of_stay, y=reorder(patient_ID, max_hour), size=distance^(1/.7)), inherit.aes=FALSE, alpha = 0.2) +
