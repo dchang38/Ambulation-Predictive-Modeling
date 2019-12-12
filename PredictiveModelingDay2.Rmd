@@ -378,11 +378,10 @@ trainRowCount <- floor(0.8 * nrow(df11))
 trainIndex <- sample(1:nrow(df11), trainRowCount)
 train <- df11[trainIndex,]
 test <- df11[-trainIndex,]
-predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "disWalksDay1", "totalTimeDay1", "averageSpeedDay1","maxSpeedDay1")
-rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + disWalksDay1 +  totalTimeDay1 + averageSpeedDay1 + maxSpeedDay1, data = train, ntree = 100, importance = TRUE)
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "numWalksDay2", "numWalksDay3", "disWalksDay1", "disWalksDay2", "disWalksDay3", "disWalksDay4", "totalTimeDay1", "totalTimeDay2", "totalTimeDay3", "totalTimeDay4", "averageSpeedDay1","averageSpeedDay2","averageSpeedDay3","averageSpeedDay4","maxSpeedDay1", "maxSpeedDay2", "maxSpeedDay3", "maxSpeedDay4")
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2 + numWalksDay3  + disWalksDay1 + disWalksDay2 + disWalksDay3  + totalTimeDay1 + totalTimeDay2 + totalTimeDay3  +  averageSpeedDay1 + averageSpeedDay2 + averageSpeedDay3 + maxSpeedDay1 + maxSpeedDay2 + maxSpeedDay3, data = train, ntree = 500, importance = TRUE)
 
 predictions <- predict(rf, test[predictorColumns])
-#mean((test["afterDay3"] - predictions)^2)
 
 totalDay = rep(0, 7)
 dayCounts = rep(0, 7)
@@ -440,6 +439,90 @@ for (x in 1:7) {
 
 df12 <- data.frame(days=c(1:7),
                   average= c(averageTime))
+
+```
+## ROC Curve
+
+```{r , echo=FALSE}
+df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  afterDay3= c((strtoi(patientInfo$length_of_stay.days.) - 3)),
+                  days2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
+                  dayTransferred = c(patientInfo$transferWeekday), 
+                  numWalksDay1 = c(patientInfo$numWalksDay1),
+                  disWalksDay1 = c(patientInfo$disWalksDay1),
+                  numWalksDay2 = c(patientInfo$numWalksDay2),
+                  disWalksDay2 = c(patientInfo$disWalksDay2),
+                  numWalksDay3 = c(patientInfo$numWalksDay3),
+                  disWalksDay3 = c(patientInfo$disWalksDay3),
+                  numWalksDay4 = c(patientInfo$numWalksDay4),
+                  disWalksDay4 = c(patientInfo$disWalksDay4),
+                  totalTimeDay1 = c(patientInfo$totalTimeDay1),
+                  totalTimeDay2 = c(patientInfo$totalTimeDay2),
+                  totalTimeDay3 = c(patientInfo$totalTimeDay3),
+                  totalTimeDay4 = c(patientInfo$totalTimeDay4),
+                  averageSpeedDay1 = c(patientInfo$averageSpeedDay1),
+                  averageSpeedDay2 = c(patientInfo$averageSpeedDay2),
+                  averageSpeedDay3 = c(patientInfo$averageSpeedDay3),
+                  averageSpeedDay4 = c(patientInfo$averageSpeedDay4),
+                  maxSpeedDay1 = c(patientInfo$maxSpeedDay1),
+                  maxSpeedDay2 = c(patientInfo$maxSpeedDay2),
+                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3),
+                  maxSpeedDay4 = c(patientInfo$maxSpeedDay4))
+
+#c(rep(0, 106))
+
+df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101,83,84,85,86), ]
+df11 <- head(df11,-8)
+
+train <- df11
+test <- df11
+
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "numWalksDay2", "disWalksDay1","disWalksDay2", "totalTimeDay1", "totalTimeDay2", "averageSpeedDay1", "averageSpeedDay2", "maxSpeedDay1", "maxSpeedDay2")
+
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2 + disWalksDay1 + disWalksDay2  + totalTimeDay1  + totalTimeDay2  + averageSpeedDay1 + averageSpeedDay2 + maxSpeedDay1 + maxSpeedDay2, data = train, ntree = 500, importance = TRUE)
+
+predictions <- predict(rf, test[predictorColumns], nodes = FALSE)
+hist((test$afterDay3 - predictions), breaks=8, main = 'Predictions (2 Days of Data)')
+#print(predictions - test$afterDay3)
+#print(predictions)
+df11$predictions = predictions
+plot(rf)
+varImpPlot(rf)
+plot(predictions, (test$afterDay3 - predictions), main = 'Spread (2 Days of Data)')
+1/(var(test$afterDay3)/ var(predictions))
+#hist(df11$afterDay3)
+#print(summary(df10$icuDay))
+#write.csv(df11,'df11.csv')
+
+```
+## Decision Tree 
+
+```{r , echo=FALSE}
+library(rpart)
+
+fit <- rpart(predictions ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2   + disWalksDay1 + disWalksDay2  + totalTimeDay1  + totalTimeDay2  + averageSpeedDay1 + averageSpeedDay2  + maxSpeedDay1 + maxSpeedDay2, 
+   method="anova", data = train, minbucket= 1, minsplit = 1)
+
+predictionsCART <- predict(fit)
+df11$predictionsCART = predictionsCART
+#write.csv(df11,'df11c.csv')
+#print(fit)
+#printcp(fit) # display the results
+# plotcp(fit) # visualize cross-validation results
+#summary(fit) # detailed summary of splits
+# 
+# # create additional plots
+# par(mfrow=c(1,2)) # two plots on one page
+# rsq.rpart(fit) # visualize cross-validation results
+
+# plot tree
+library(rpart.plot)
+par(xpd=NA)
+rpart.plot(fit, uniform=TRUE,
+   main="Regression Tree for Transfer After Day 3 (2 Days of Data)")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+rsq <- function (x, y) cor(x, y) ^ 2
+rsq(predictions, predictionsCART)
 
 ```
 
