@@ -1,0 +1,614 @@
+---
+title: "Predictive Modeling"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+## Predicitve Modeling
+
+#### FROM HISTORICAL
+historical <- read.csv("data_files/historical_details_withdayonunit.csv",
+                        header =TRUE)
+
+distance = historical$distance
+duration = historical$duration
+speed = historical$speed
+
+#### FROM FINAL COHORTS
+finalPatients <- read.csv("data_files/Final_patients.csv",
+                          header = FALSE, skip = 3)
+
+finalPatients <- head(finalPatients,-3)
+
+readmission = finalPatients$V4
+location = finalPatients$V5
+icu = finalPatients$V6
+
+#### FROM PATIENT INFO 
+## load data from local csv file
+patientInfo <- read.csv("data_files/patient_info.csv",
+               header =TRUE, skip = 0)
+
+patientInfo <- patientInfo[c(1:106), ]
+
+admissionDays = patientInfo$admission_date
+dischargeDays = patientInfo$discharge_date
+transferDays = patientInfo$transfer_date
+firstAdmission = patientInfo$admission_date[1]
+
+patientInfo$a2d <- (as.Date(transferDays, format="%m/%d/%Y") - as.Date(admissionDays, format="%m/%d/%Y"))
+patientInfo$t2d <- (as.Date(dischargeDays, format="%m/%d/%Y") - as.Date(transferDays, format="%m/%d/%Y"))
+
+patientInfo$before <- (as.Date(admissionDays, format="%m/%d/%Y") - as.Date(firstAdmission, format="%m/%d/%Y"))
+
+
+for (i in 1:86){
+  patID = strtoi(patientInfo$patient_ID[i])
+  icunew = finalPatients$V6[patID]
+  patientInfo$icuDay[i] <- icunew/24
+  
+}
+
+print(strtoi(patientInfo$a2d[1]) > patientInfo$icuDay[1])
+for (i in 1:82){
+  if (strtoi(patientInfo$a2d[i])>patientInfo$icuDay[i]){
+    patientInfo$a2i[i] <- strtoi(patientInfo$a2d[i]) - patientInfo$icuDay[i]
+    
+  } else {
+    patientInfo$a2i[i] <- 0
+  
+  }
+    
+}
+
+patientInfo$total <- patientInfo$a2i + patientInfo$icuDay + patientInfo$t2d
+
+patientInfo$dischargeWeekday <- weekdays(as.Date(dischargeDays, '%m/%d/%Y'))
+patientInfo$transferWeekday <- weekdays(as.Date(transferDays, '%m/%d/%Y'))
+
+for (i in 1:106){
+  patientInfo$stringPatient_ID[i] <- toString(patientInfo$patient_ID[i])
+}
+
+transferWeekdays = patientInfo$transferWeekday
+weekdays = patientInfo$dischargeWeekday
+lengthOfStay = patientInfo$length_of_stay.days.
+transferCounts = rep(0, 7)
+counts = rep(0, 7)
+
+my.array <- array(counts, dim=c(1,7))
+
+for (i in 1:length(weekdays)){
+  
+  if (identical(weekdays[i], "Monday")){
+    
+    counts[1] = counts[1] + 1
+    
+  } else if (identical(weekdays[i], "Tuesday")){
+    
+    counts[2] = counts[2] + 1
+    
+  } else if (identical(weekdays[i], "Wednesday")){
+    
+    counts[3] = counts[3] + 1
+    
+  } else if (identical(weekdays[i], "Thursday")){
+    
+    counts[4] = counts[4] + 1
+    
+  } else if (identical(weekdays[i], "Friday")){
+    
+    counts[5] = counts[5] + 1
+    
+  } else if (identical(weekdays[i], "Saturday")){
+    
+    counts[6] = counts[6] + 1
+    
+  } else if (identical(weekdays[i], "Sunday")){
+    
+    counts[7] = counts[7] + 1
+    
+  } else {
+    
+  }
+  
+} 
+
+for (i in 1:length(transferWeekdays)){
+  
+  if (identical(transferWeekdays[i], "Monday")){
+    
+    transferCounts[1] = transferCounts[1] + 1
+    
+  } else if (identical(transferWeekdays[i], "Tuesday")){
+    
+    transferCounts[2] = transferCounts[2] + 1
+    
+  } else if (identical(transferWeekdays[i], "Wednesday")){
+    
+    transferCounts[3] = transferCounts[3] + 1
+    
+  } else if (identical(transferWeekdays[i], "Thursday")){
+    
+    transferCounts[4] = transferCounts[4] + 1
+    
+  } else if (identical(transferWeekdays[i], "Friday")){
+    
+    transferCounts[5] = transferCounts[5] + 1
+    
+  } else if (identical(transferWeekdays[i], "Saturday")){
+    
+    transferCounts[6] = transferCounts[6] + 1
+    
+  } else if (identical(transferWeekdays[i], "Sunday")){
+    
+    transferCounts[7] = transferCounts[7] + 1
+    
+  } else {
+    
+  }
+  
+} 
+df2 <- data.frame(dis=rep(c("Discharge", "Transfer"), each=7),
+                day= rep(c("Monday", "Tuesday","Wednesday","Thursday","Friday", "Saturday","Sunday")), 2,
+                count=c(counts, transferCounts))
+df2$day <- factor(df2$day, levels=c("Monday", "Tuesday","Wednesday","Thursday","Friday", "Saturday","Sunday"))
+head(df2)
+
+df3 <- data.frame(los=lengthOfStay)
+head(df3)
+
+readmission <- head(readmission,-3)
+df4 <- data.frame(read=readmission)
+head(df4)
+
+location <- head(location,-1)
+df5 <- data.frame(loc=location)
+head(df5)
+
+df6 <- data.frame(spe=speed)
+head(df6)
+
+df7 <- data.frame(dis=distance)
+head(df7)
+
+df8 <- data.frame(dur=duration)
+head(df8)
+
+df9 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  a2i= c(patientInfo$a2i),
+                  icuDay=c(patientInfo$icuDay),
+                  t2d = c(patientInfo$t2d), 
+                  total = c(patientInfo$total))
+
+head(df9)
+
+df9 <- head(df9,-20)
+attach(df9)
+df9 <- df9[order(total) , ] 
+df9$total <- NULL
+df9 <- df9[-c(83,84,85,86), ]
+
+
+library(reshape2)
+DF9A <- melt(df9)
+DF9A$id <- rep(1:82, times = 3)
+DF9A$variable <- factor(DF9A$variable, levels=c("t2d", "icuDay","a2i"))
+
+df9 <- df9[,-2]
+df9 <- df9[,-2]
+
+DF9B <- melt(df9)
+DF9B$id <- rep(1:82, times = 1)
+DF9B$variable <- factor(DF9B$variable, levels=c("t2d"))
+
+df10 <- data.frame(id=c(1:86),
+                  a2i= c(patientInfo$a2i[1:86]),
+                  icuDay=c(patientInfo$icuDay[1:86]),
+                  t2d = c(patientInfo$t2d[1:86]), 
+                  before = c(patientInfo$before[1:86]))
+
+head(df10)
+
+#df10 <- head(df10,-20)
+attach(df10)
+
+library(reshape2)
+DF10 <- melt(df10, id.vars = c("id"))
+DF10$variable <- factor(DF10$variable, levels=c("t2d", "icuDay","a2i", "before"))
+
+for (i in 1:86){
+  
+  numWalksDay1 = 0
+  disWalksDay1 = 0
+  numWalksDay2 = 0
+  disWalksDay2 = 0
+  numWalksDay3 = 0
+  disWalksDay3 = 0
+  numWalksDay4 = 0 
+  disWalksDay4 = 0
+  totalTimeDay1 = 0
+  totalTimeDay2 = 0
+  totalTimeDay3 = 0
+  totalTimeDay4 = 0
+  averageSpeedDay1 = 0
+  averageSpeedDay2 = 0
+  averageSpeedDay3 = 0
+  averageSpeedDay4 = 0 
+  maxSpeedDay1 <- c()
+  maxSpeedDay2 <- c()
+  maxSpeedDay3 <- c()
+  maxSpeedDay4 <- c()
+  
+  for (x in 1:795){
+    
+    
+    if (strtoi(patientInfo$patient_ID[i]) == historical$patient_ID[x]){
+      
+      if (historical$Day.on.Unit[x] == 1) {
+        
+        numWalksDay1 = numWalksDay1 + 1
+        disWalksDay1 = disWalksDay1 + historical$distance[x]
+        totalTimeDay1 = totalTimeDay1 + historical$duration[x]
+        averageSpeedDay1 = averageSpeedDay1 + historical$speed[x]
+        maxSpeedDay1 <- c(maxSpeedDay1, historical$speed[x])
+        
+      } else if (historical$Day.on.Unit[x] == 2){
+        
+        numWalksDay2 = numWalksDay2 + 1
+        disWalksDay2 = disWalksDay2 + historical$distance[x]
+        totalTimeDay2 = totalTimeDay2 + historical$duration[x]
+        averageSpeedDay2 = averageSpeedDay2 + historical$speed[x]
+        maxSpeedDay2 <- c(maxSpeedDay2, historical$speed[x])
+
+        
+      } else if (historical$Day.on.Unit[x] == 3){
+        
+        numWalksDay3 = numWalksDay3 + 1
+        disWalksDay3 = disWalksDay3 + historical$distance[x]
+        totalTimeDay3 = totalTimeDay3 + historical$duration[x]
+        averageSpeedDay3 = averageSpeedDay3 + historical$speed[x]
+        maxSpeedDay3 <- c(maxSpeedDay3, historical$speed[x])
+        
+      } else if (historical$Day.on.Unit[x] == 4){
+        
+        numWalksDay4 = numWalksDay4 + 1
+        disWalksDay4 = disWalksDay4 + historical$distance[x]
+        totalTimeDay4 = totalTimeDay4 + historical$duration[x]
+        averageSpeedDay4 = averageSpeedDay4 + historical$speed[x]
+        maxSpeedDay4 <- c(maxSpeedDay4, historical$speed[x])
+        
+      }
+      
+      if (numWalksDay1 != 0) {
+        patientInfo$maxSpeedDay1[i] <- max(maxSpeedDay1)
+      } else {
+        patientInfo$maxSpeedDay1[i] <- 0
+      }
+      if (numWalksDay2 != 0) {
+        patientInfo$maxSpeedDay2[i] <- max(maxSpeedDay2)
+      } else {
+        patientInfo$maxSpeedDay2[i] <- 0
+      }
+      if (numWalksDay3 != 0) {
+        patientInfo$maxSpeedDay3[i] <- max(maxSpeedDay3)
+      } else {
+        patientInfo$maxSpeedDay3[i] <- 0
+      }
+      if (numWalksDay4 != 0) {
+        patientInfo$maxSpeedDay4[i] <- max(maxSpeedDay4)
+      } else {
+        patientInfo$maxSpeedDay4[i] <- 0
+      }
+      
+    }
+    
+  }
+    
+    patientInfo$numWalksDay1[i] <- numWalksDay1
+    patientInfo$disWalksDay1[i] <- disWalksDay1
+    patientInfo$numWalksDay2[i] <- numWalksDay2
+    patientInfo$disWalksDay2[i] <- disWalksDay2
+    patientInfo$numWalksDay3[i] <- numWalksDay3
+    patientInfo$disWalksDay3[i] <- disWalksDay3
+    patientInfo$numWalksDay4[i] <- numWalksDay4
+    patientInfo$disWalksDay4[i] <- disWalksDay4
+    patientInfo$totalTimeDay1[i] <- totalTimeDay1
+    patientInfo$totalTimeDay2[i] <- totalTimeDay2
+    patientInfo$totalTimeDay3[i] <- totalTimeDay3
+    patientInfo$totalTimeDay4[i] <- totalTimeDay4
+    
+    
+    if  (numWalksDay1 != 0) {
+      patientInfo$averageSpeedDay1[i] <- averageSpeedDay1/numWalksDay1
+    } else {
+      patientInfo$averageSpeedDay1[i] <- 0
+    }
+    if  (numWalksDay2 != 0) {
+      patientInfo$averageSpeedDay2[i] <- averageSpeedDay2/numWalksDay2
+    } else {
+      patientInfo$averageSpeedDay2[i] <- 0
+    }
+    if  (numWalksDay3 != 0) {
+      patientInfo$averageSpeedDay3[i] <- averageSpeedDay3/numWalksDay3
+    } else {
+      patientInfo$averageSpeedDay3[i] <- 0
+    }
+    if  (numWalksDay4 != 0) {
+      patientInfo$averageSpeedDay4[i] <- averageSpeedDay4/numWalksDay4
+    } else {
+      patientInfo$averageSpeedDay4[i] <- 0
+    }
+}
+
+df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  afterDay3= c((strtoi(patientInfo$length_of_stay.days.) - 3)),
+                  days2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
+                  dayTransferred = c(patientInfo$transferWeekday), 
+                  numWalksDay1 = c(patientInfo$numWalksDay1),
+                  disWalksDay1 = c(patientInfo$disWalksDay1),
+                  numWalksDay2 = c(patientInfo$numWalksDay2),
+                  disWalksDay2 = c(patientInfo$disWalksDay2),
+                  numWalksDay3 = c(patientInfo$numWalksDay3),
+                  disWalksDay3 = c(patientInfo$disWalksDay3),
+                  numWalksDay4 = c(patientInfo$numWalksDay4),
+                  disWalksDay4 = c(patientInfo$disWalksDay4),
+                  totalTimeDay1 = c(patientInfo$totalTimeDay1),
+                  totalTimeDay2 = c(patientInfo$totalTimeDay2),
+                  totalTimeDay3 = c(patientInfo$totalTimeDay3),
+                  totalTimeDay4 = c(patientInfo$totalTimeDay4),
+                  averageSpeedDay1 = c(patientInfo$averageSpeedDay1),
+                  averageSpeedDay2 = c(patientInfo$averageSpeedDay2),
+                  averageSpeedDay3 = c(patientInfo$averageSpeedDay3),
+                  averageSpeedDay4 = c(patientInfo$averageSpeedDay4),
+                  maxSpeedDay1 = c(patientInfo$maxSpeedDay1),
+                  maxSpeedDay2 = c(patientInfo$maxSpeedDay2),
+                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3),
+                  maxSpeedDay4 = c(patientInfo$maxSpeedDay4))
+
+df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101,83,84,85,86), ]
+df11 <- head(df11,-8)
+
+library(randomForest)
+library(pdp)
+set.seed(100)
+trainRowCount <- floor(0.8 * nrow(df11))
+trainIndex <- sample(1:nrow(df11), trainRowCount)
+train <- df11[trainIndex,]
+test <- df11[-trainIndex,]
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "numWalksDay2", "numWalksDay3", "numWalksDay4", "disWalksDay1", "disWalksDay2", "disWalksDay3", "disWalksDay4", "totalTimeDay1", "totalTimeDay2", "totalTimeDay3", "totalTimeDay4", "averageSpeedDay1","averageSpeedDay2","averageSpeedDay3","averageSpeedDay4","maxSpeedDay1", "maxSpeedDay2", "maxSpeedDay3", "maxSpeedDay4")
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2 + numWalksDay3  + disWalksDay1 + disWalksDay2 + disWalksDay3  + totalTimeDay1 + totalTimeDay2 + totalTimeDay3  +  averageSpeedDay1 + averageSpeedDay2 + averageSpeedDay3 + maxSpeedDay1 + maxSpeedDay2 + maxSpeedDay3, data = train, ntree = 500, importance = TRUE)
+
+predictions <- predict(rf, test[predictorColumns])
+
+totalDay = rep(0, 7)
+dayCounts = rep(0, 7)
+averageTime = rep(0, 7)
+
+for (i in 1:length(df11$dayTransferred)){
+  
+  
+  if (identical(toString(df11$dayTransferred[i]), "Monday")){
+    
+    dayCounts[1] = dayCounts[1] + 1
+    totalDay[1] = totalDay[1] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Tuesday")){
+    
+    dayCounts[2] = dayCounts[2] + 1
+    totalDay[2] = totalDay[2] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Wednesday")){
+    
+    dayCounts[3] = dayCounts[3] + 1
+    totalDay[3] = totalDay[3] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Thursday")){
+    
+    dayCounts[4] = dayCounts[4] + 1
+    totalDay[4] = totalDay[4] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Friday")){
+    
+    dayCounts[5] = dayCounts[5] + 1
+    totalDay[5] = totalDay[5] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Saturday")){
+    
+    dayCounts[6] = dayCounts[6] + 1
+    totalDay[6] = totalDay[6] + df11$afterDay3[i]
+    
+  } else if (identical(toString(df11$dayTransferred[i]), "Sunday")){
+    
+    dayCounts[7] = dayCounts[7] + 1
+    totalDay[7] = totalDay[7] + df11$afterDay3[i]
+    
+  } else {
+    
+  }
+  
+} 
+
+for (x in 1:7) {
+  
+  averageTime[x] = totalDay[x]/dayCounts[x]
+  
+}
+
+df12 <- data.frame(days=c(1:7),
+                  average= c(averageTime))
+
+```
+## ROC Curve
+
+```{r , echo=FALSE}
+df11 <- data.frame(id=c(patientInfo$stringPatient_ID),
+                  afterDay3= c((strtoi(patientInfo$length_of_stay.days.) - 3)),
+                  days2Transfer=c(patientInfo$a2i + patientInfo$icuDay),
+                  dayTransferred = c(patientInfo$transferWeekday), 
+                  numWalksDay1 = c(patientInfo$numWalksDay1),
+                  disWalksDay1 = c(patientInfo$disWalksDay1),
+                  numWalksDay2 = c(patientInfo$numWalksDay2),
+                  disWalksDay2 = c(patientInfo$disWalksDay2),
+                  numWalksDay3 = c(patientInfo$numWalksDay3),
+                  disWalksDay3 = c(patientInfo$disWalksDay3),
+                  numWalksDay4 = c(patientInfo$numWalksDay4),
+                  disWalksDay4 = c(patientInfo$disWalksDay4),
+                  totalTimeDay1 = c(patientInfo$totalTimeDay1),
+                  totalTimeDay2 = c(patientInfo$totalTimeDay2),
+                  totalTimeDay3 = c(patientInfo$totalTimeDay3),
+                  totalTimeDay4 = c(patientInfo$totalTimeDay4),
+                  averageSpeedDay1 = c(patientInfo$averageSpeedDay1),
+                  averageSpeedDay2 = c(patientInfo$averageSpeedDay2),
+                  averageSpeedDay3 = c(patientInfo$averageSpeedDay3),
+                  averageSpeedDay4 = c(patientInfo$averageSpeedDay4),
+                  maxSpeedDay1 = c(patientInfo$maxSpeedDay1),
+                  maxSpeedDay2 = c(patientInfo$maxSpeedDay2),
+                  maxSpeedDay3 = c(patientInfo$maxSpeedDay3),
+                  maxSpeedDay4 = c(patientInfo$maxSpeedDay4))
+
+#c(rep(0, 106))
+
+df11 <- df11[-c(3,5,8,14,15,34,43,44,48,101,83,84,85,86), ]
+df11 <- head(df11,-8)
+
+train <- df11
+test <- df11
+
+predictorColumns <- c("days2Transfer", "dayTransferred", "numWalksDay1", "numWalksDay2", "numWalksDay3", "disWalksDay1","disWalksDay2", "disWalksDay3", "totalTimeDay1", "totalTimeDay2", "totalTimeDay3", "averageSpeedDay1", "averageSpeedDay2", "averageSpeedDay3", "maxSpeedDay1", "maxSpeedDay2", "maxSpeedDay3")
+
+rf <- randomForest(afterDay3 ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2 + numWalksDay3  + disWalksDay1 + disWalksDay2 + disWalksDay3  + totalTimeDay1  + totalTimeDay2  + totalTimeDay3  + averageSpeedDay1 + averageSpeedDay2 + averageSpeedDay3 + maxSpeedDay1 + maxSpeedDay2 + maxSpeedDay3, data = train, ntree = 500, importance = TRUE)
+
+predictions <- predict(rf, test[predictorColumns], nodes = FALSE)
+hist((test$afterDay3 - predictions), breaks=8, main = 'Predictions (3 Days of Data)')
+#print(predictions - test$afterDay3)
+#print(predictions)
+df11$predictions = predictions
+plot(rf)
+varImpPlot(rf)
+plot(predictions, (test$afterDay3 - predictions), main = 'Spread (3 Days of Data)')
+1/(var(test$afterDay3)/ var(predictions))
+#hist(df11$afterDay3)
+#print(summary(df10$icuDay))
+#write.csv(patientInfo,'CalculatedDataSet.csv')
+
+```
+## Decision Tree 
+
+```{r , echo=FALSE}
+library(rpart)
+
+fit <- rpart(predictions ~ days2Transfer + dayTransferred + numWalksDay1 + numWalksDay2 + numWalksDay3  + disWalksDay1 + disWalksDay2 + disWalksDay3  + totalTimeDay1  + totalTimeDay2  + totalTimeDay3  + averageSpeedDay1 + averageSpeedDay2 + averageSpeedDay3 + maxSpeedDay1 + maxSpeedDay2 + maxSpeedDay3, 
+   method="anova", data = train, minbucket= 1, minsplit = 1)
+
+predictionsCART <- predict(fit)
+df11$predictionsCART = predictionsCART
+#write.csv(df11,'df11c.csv')
+#print(fit)
+#printcp(fit) # display the results
+# plotcp(fit) # visualize cross-validation results
+#summary(fit) # detailed summary of splits
+# 
+# # create additional plots
+# par(mfrow=c(1,2)) # two plots on one page
+# rsq.rpart(fit) # visualize cross-validation results
+
+# plot tree
+library(rpart.plot)
+par(xpd=NA)
+rpart.plot(fit, uniform=TRUE,
+   main="Regression Tree for Transfer After Day 3 (3 Days of Data)")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+rsq <- function (x, y) cor(x, y) ^ 2
+rsq(predictions, predictionsCART)
+
+```
+
+## Discharge/Transfer Day of Week 
+
+```{r , echo=FALSE}
+print(rf)
+varImpPlot(rf,type=2)
+par <- partial(rf, pred.var = c("dayTransferred"), chull = TRUE)
+str(par)
+#plot <- autoplot(par, contour = TRUE)
+
+print(plot)
+library(ggplot2)
+ggplot(data=df2, aes(x=day, y=count, fill=dis)) +
+geom_bar(stat="identity", position=position_dodge())
+```
+
+## Length of Stay
+
+```{r , echo=FALSE}
+ggplot(df3, aes(x=los)) + 
+  geom_histogram(color="black", fill="white", binwidth=1, stat = "count") 
+```
+
+## Readmission Rates
+
+```{r , echo=FALSE}
+ggplot(df4, aes(x=read))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + scale_x_continuous(breaks=c(0,1), labels=c("NO", "YES"))
+```
+
+## Discharge Location
+
+```{r , echo=FALSE}
+ggplot(df5, aes(x=loc))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + scale_x_continuous(breaks=c(0,1), labels=c("Home or Hotel", "Rehab"))
+```
+
+## Raw Speed Data
+
+```{r , echo=FALSE}
+ggplot(df6, aes(x=spe))  +
+  geom_histogram(color="black", fill="white", binwidth=0.1) + labs(x = "Speed (m/s)")
+```
+
+## Log Distance Data
+
+```{r , echo=FALSE}
+ggplot(log10(df7), aes(x=dis))  +
+  geom_histogram(color="black", fill="white", binwidth=0.1) +
+scale_x_continuous(breaks=c(2,2.5,2.7,3,3.5,4), labels=c("100","316",  "447","1000","3160", "10000")) + labs(x = "Distance (feet)") + geom_vline(xintercept = 2.7, linetype="dotted", 
+                color = "blue", size=1.5)
+```
+
+## Raw Duration Data
+
+```{r , echo=FALSE}
+ggplot(df8/60, aes(x=dur))  +
+  geom_histogram(color="black", fill="white", binwidth=1) + labs(x = "Duration (minutes)")
+```
+
+## Stacked Time per Patient ID 
+
+```{r , echo=FALSE}
+#DF9[, 3] <- log(24*DF9[3])
+ggplot(DF9A, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + labs(y = "Time (Day)") + labs(x = "Patient") + scale_x_continuous(breaks=c(0), labels=c(""))
+
+ggplot(DF9B, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + labs(y = "Time (Day)") + labs(x = "Patient") + scale_x_continuous(breaks=c(0), labels=c(""))
+```
+
+## Absolute Calendar Time 
+
+```{r , echo=FALSE}
+ggplot(DF10, aes(x = id, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + scale_y_continuous(breaks=c(0, 586), labels=c("08/22/16", "01/27/19")) + labs(y = "Day") + coord_flip() + scale_fill_manual(values = c("Green","Yellow", "Red", "#e8e8e8"))
+```
+
+## After Day 3 
+
+```{r , echo=FALSE}
+
+library(ggplot2)
+# Basic scatter plot
+ggplot(df12, aes(x= days, y=averageTime)) + geom_point()
+
+```
