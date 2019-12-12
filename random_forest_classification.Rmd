@@ -3,8 +3,11 @@ library(randomForest)
 library(pdp)
 library(ggplot2)
 library(rpart)
+library(rpart.plot)
+library(pROC)
+library(tidyverse)
 
-ambData <- read.csv("data_files/Patients_hourly_data_3.csv",
+ambData <- read.csv("data_files/Patients_hourly_data_increment_HSLW_before_first_walk.csv",
                fileEncoding="UTF-8-BOM",
                header = TRUE)
 set.seed(100)
@@ -12,13 +15,151 @@ trainRowCount <- floor(0.7 * nrow(ambData))
 trainIndex <- sample(nrow(ambData), trainRowCount)
 train <- ambData[trainIndex,]
 test <- ambData[-trainIndex,]
-predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total", "Hour.Of.Day", "Number.Of.Times", "Hours.Since.Last.Walk", "Distance.Of.Last.Walk", "Total.Distance.Walked")
-rf <- randomForest(as.factor(Going_to_Walk) ~ Day.On.Unit + Hour.Of.Stay + Ambulations + Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Hours.Since.Last.Walk + Distance.Of.Last.Walk + Total.Distance.Walked, data = train, ntree=100, probability = TRUE)
-predictions <- predict(rf, test, type="prob")
+predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total",
+                      "Hour.Of.Day", "Number.Of.Times", "Duration", "Average.Speed",
+                      "Hours.Since.Last.Walk", "Distance.Of.Last.Walk",
+                      "Total.Distance.Walked", "Total.Duration", "Total.Average.Speed")
+rf <- randomForest(as.factor(Going.to.Walk) ~ Day.On.Unit + Hour.Of.Stay + Ambulations +
+                     Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+                     Average.Speed + Hours.Since.Last.Walk + Distance.Of.Last.Walk +
+                     Total.Distance.Walked + Total.Duration + Total.Average.Speed, data =
+                     ambData, ntree=100, probability = TRUE)
+predictions <- predict(rf, ambData, type="prob", importance(TRUE))
+
+test1 <- cbind(ambData, predictions)
+fit <- rpart(predictions[,1] ~ Day.On.Unit + Hour.Of.Stay + Ambulations + 
+               Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+               Average.Speed + Hours.Since.Last.Walk + 
+               Distance.Of.Last.Walk + Total.Distance.Walked + Total.Duration + 
+               Total.Average.Speed, data=ambData)
+par(xpd = NA)
+rpart.plot(fit)
+rpart.plot(fit, uniform=TRUE,
+   main="Classification Going To Walk")
+text(fit, use.n=TRUE, all=TRUE, cex=.8, digits=3)
+
+p<-predict(fit)
+cor(p, test1$`0`)
 #print(rf)
-#print(predictions)
-varImpPlot(rf,type=2)
-par <- partial(rf, pred.var = "Hour.Of.Day", prob = "true")
-plot <- autoplot(par, contour = TRUE)
-print(plot)
+varImpPlot(rf)
+#pdp::partial(rf, pred.var = "Hours.Since.Last.Walk", prob = TRUE, rug = TRUE, plot.engine = #"ggplot2")  %>% 
+#  plotPartial()
+#partial(rf, pred.var = "Hour.Of.Day", prob = TRUE, rug = TRUE, plot.engine = "ggplot2")  %>% 
+ # plotPartial()
+#write.csv(test, file='test_no_data_before_first_walk.csv')
+#write.csv(predictions, file='predictions_one_over_HSLW.csv')
+require(pROC)
+rf.roc<-roc(ambData$Going.to.Walk,rf$votes[,1])
+plot(rf.roc)
+auc(rf.roc)
+```
+```{r}
+library(randomForest)
+library(pdp)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(tidyverse)
+
+ambData <- read.csv("data_files/Patients_hourly_data_no_data_before_first_walk.csv",
+               fileEncoding="UTF-8-BOM",
+               header = TRUE)
+set.seed(100)
+trainRowCount <- floor(0.7 * nrow(ambData))
+trainIndex <- sample(nrow(ambData), trainRowCount)
+train <- ambData[trainIndex,]
+test <- ambData[-trainIndex,]
+predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total",
+                      "Hour.Of.Day", "Number.Of.Times", "Duration", "Average.Speed",
+                      "Hours.Since.Last.Walk", "Distance.Of.Last.Walk",
+                      "Total.Distance.Walked", "Total.Duration", "Total.Average.Speed")
+rf <- randomForest(as.factor(Going.to.Walk) ~ Day.On.Unit + Hour.Of.Stay + Ambulations +
+                     Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+                     Average.Speed + Hours.Since.Last.Walk + Distance.Of.Last.Walk +
+                     Total.Distance.Walked + Total.Duration + Total.Average.Speed, data =
+                     ambData, ntree=100, probability = TRUE)
+predictions <- predict(rf, ambData, type="prob", importance(TRUE))
+
+test1 <- cbind(ambData, predictions)
+fit <- rpart(predictions[,1] ~ Day.On.Unit + Hour.Of.Stay + Ambulations + 
+               Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+               Average.Speed + Hours.Since.Last.Walk + 
+               Distance.Of.Last.Walk + Total.Distance.Walked + Total.Duration + 
+               Total.Average.Speed, data=ambData)
+par(xpd = NA)
+rpart.plot(fit)
+rpart.plot(fit, uniform=TRUE,
+   main="Classification Going To Walk")
+text(fit, use.n=TRUE, all=TRUE, cex=.8, digits=3)
+
+p<-predict(fit)
+cor(p, test1$`0`)
+#print(rf)
+varImpPlot(rf)
+#pdp::partial(rf, pred.var = "Hours.Since.Last.Walk", prob = TRUE, rug = TRUE, plot.engine = #"ggplot2")  %>% 
+#  plotPartial()
+#partial(rf, pred.var = "Hour.Of.Day", prob = TRUE, rug = TRUE, plot.engine = "ggplot2")  %>% 
+ # plotPartial()
+#write.csv(test, file='test_no_data_before_first_walk.csv')
+#write.csv(predictions, file='predictions_one_over_HSLW.csv')
+require(pROC)
+rf.roc<-roc(ambData$Going.to.Walk,rf$votes[,1])
+plot(rf.roc)
+auc(rf.roc)
+```
+```{r}
+library(randomForest)
+library(pdp)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(tidyverse)
+
+ambData <- read.csv("data_files/Patients_hourly_data_only_data_before_first_walk.csv",
+               fileEncoding="UTF-8-BOM",
+               header = TRUE)
+set.seed(100)
+trainRowCount <- floor(0.7 * nrow(ambData))
+trainIndex <- sample(nrow(ambData), trainRowCount)
+train <- ambData[trainIndex,]
+test <- ambData[-trainIndex,]
+predictorColumns <- c("Day.On.Unit", "Hour.Of.Stay", "Ambulations", "Daily.Ambulation.Total",
+                      "Hour.Of.Day", "Number.Of.Times", "Duration", "Average.Speed",
+                      "Hours.Since.Last.Walk", "Distance.Of.Last.Walk",
+                      "Total.Distance.Walked", "Total.Duration", "Total.Average.Speed")
+rf <- randomForest(as.factor(Going.to.Walk) ~ Day.On.Unit + Hour.Of.Stay + Ambulations +
+                     Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+                     Average.Speed + Hours.Since.Last.Walk + Distance.Of.Last.Walk +
+                     Total.Distance.Walked + Total.Duration + Total.Average.Speed, data =
+                     ambData, ntree=100, probability = TRUE)
+predictions <- predict(rf, ambData, type="prob", importance(TRUE))
+
+test1 <- cbind(ambData, predictions)
+fit <- rpart(predictions[,1] ~ Day.On.Unit + Hour.Of.Stay + Ambulations + 
+               Daily.Ambulation.Total + Hour.Of.Day + Number.Of.Times + Duration +
+               Average.Speed + Hours.Since.Last.Walk + Distance.Of.Last.Walk +
+               Total.Distance.Walked + Total.Duration + 
+               Total.Average.Speed, data=ambData)
+par(xpd = NA)
+rpart.plot(fit)
+rpart.plot(fit, uniform=TRUE,
+   main="Classification Going To Walk")
+text(fit, use.n=TRUE, all=TRUE, cex=.8, digits=3)
+
+p<-predict(fit)
+cor(p, test1$`0`)
+#print(rf)
+varImpPlot(rf)
+#pdp::partial(rf, pred.var = "Hours.Since.Last.Walk", prob = TRUE, rug = TRUE, plot.engine = #"ggplot2")  %>% 
+#  plotPartial()
+#partial(rf, pred.var = "Hour.Of.Day", prob = TRUE, rug = TRUE, plot.engine = "ggplot2")  %>% 
+ # plotPartial()
+#write.csv(test, file='test_only_data_before_first_walk.csv')
+#write.csv(predictions, file='predictions_only_data_before_first_walk.csv')
+require(pROC)
+rf.roc<-roc(ambData$Going.to.Walk,rf$votes[,1])
+plot(rf.roc)
+auc(rf.roc)
 ```

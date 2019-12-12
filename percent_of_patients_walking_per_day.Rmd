@@ -1,13 +1,13 @@
 ```{r}
 library(tidyverse)
 
-pop <- read.csv("data_files/percent_of_patients.csv",
+pop <- read.csv("data_files/percent_of_patients_not_readmitted.csv",
                fileEncoding="UTF-8-BOM",
                header =TRUE)
 ggplot(data=pop, aes(x=Day, y=Percent)) + 
   geom_bar(stat="identity", fill="steelblue") +
   geom_text(aes(label=Percent), vjust=-0.3, size=3.5)+
   scale_x_continuous(breaks=seq(0,15,1)) +
-  ggtitle("Percent Of Patients Walking Per Day") +
+  ggtitle("Percent Of Not Readmitted Patients Walking Per Day") +
   theme_minimal()
 ```
