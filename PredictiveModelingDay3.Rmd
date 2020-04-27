@@ -38,7 +38,7 @@ dischargeDays = patientInfo$discharge_date
 transferDays = patientInfo$transfer_date
 firstAdmission = patientInfo$admission_date[1]
 
-patientInfo$a2d <- (as.Date(transferDays, format="%m/%d/%Y") - as.Date(admissionDays, format="%m/%d/%Y"))
+patientInfo$a2t <- (as.Date(transferDays, format="%m/%d/%Y") - as.Date(admissionDays, format="%m/%d/%Y"))
 patientInfo$t2d <- (as.Date(dischargeDays, format="%m/%d/%Y") - as.Date(transferDays, format="%m/%d/%Y"))
 
 patientInfo$before <- (as.Date(admissionDays, format="%m/%d/%Y") - as.Date(firstAdmission, format="%m/%d/%Y"))
@@ -51,10 +51,10 @@ for (i in 1:86){
   
 }
 
-print(strtoi(patientInfo$a2d[1]) > patientInfo$icuDay[1])
+print(strtoi(patientInfo$a2t[1]) > patientInfo$icuDay[1])
 for (i in 1:82){
-  if (strtoi(patientInfo$a2d[i])>patientInfo$icuDay[i]){
-    patientInfo$a2i[i] <- strtoi(patientInfo$a2d[i]) - patientInfo$icuDay[i]
+  if (strtoi(patientInfo$a2t[i])>patientInfo$icuDay[i]){
+    patientInfo$a2i[i] <- strtoi(patientInfo$a2t[i]) - patientInfo$icuDay[i]
     
   } else {
     patientInfo$a2i[i] <- 0
